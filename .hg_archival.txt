@@ -1,0 +1,5 @@
+repo: a99983b72e60629decf25abe65d40e8a346a6612
+node: da5df230196428cb17d54c7b3d28dfb9cb331a74
+branch: default
+latesttag: nspostgres-4.0
+latesttagdistance: 26

@@ -1,0 +1,254 @@
+2011-07-97  Gustaf Neumann  <neumann@wu-wien.ac.at>
+	* tclcmds.c: Get rid of deprecated calls.
+	* tclcmds.c: using SQL escape string syntax E'...' when needed (required in
+	PostgreSql 9.1, when used in connection with OpenACS)
+
+2008-08-28  Vlad Seryakov  <seryakov@users.sf.net>
+
+        * Added new RowCount API function
+
+2005-08-09  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tclcmds.c: changed to stop using old Ns_ functions
+
+2005-08-01  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* tclcmds.c: removed usage of old compat functions
+
+2005-06-16  Vlad Seryakov  <seryakov@users.sf.net>
+
+	* nsdbpg.c: removed undefined PgDbServerInit function
+	which prevented module to be loaded
+
+2005-06-15  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* dbpg.h:
+	* nsdbpg.c:
+	* tclcmds.c: Use a regular naming scheme for functions and
+	variables.
+
+	* nsdbpg.c: Untabify, reindent and reorganize. Drop emulation code
+	for AOLserver 2.x ns_table etc. commands.
+	* tclcmds.c: Split extra Tcl commands and bind vaiable emulation
+	code into new file.
+	* nsdbpg.h:
+	* dbpg.h: Rename header to reflect it's private status. Move all
+	private declarations into c files, leaving just the handle
+	structure shared module wide.
+	* Makefile: Remove all the crud.
+
+2005-06-14  Stephen Deasey  <sdeasey@users.sf.net>
+
+	* Makefile: Update for initial import into NaviServer CVS.
+	* nsdbpg.h:
+	* nsdbpg.c: Renamed from nspostgres.x.
+
+2003-03-29  Scott Goodwin  <scott@scottg.net>
+
+	* Makefile: Fixed problem where if AS3 was not set, -lnsdb was not
+	being added to library list.
+
+	* Makefile: Added OPENSSL setting to allow you to specify where
+	OPENSSL is installed. This is required when compiling nspostgres
+	against a PostgreSQL installation that has been compiled with OpenSSL.
+	If you get lots of undefined symbols that look like _SSL, _PEM and so
+	on, then you need this flag.
+
+2004-02-04  Lamar Owen <lowen@pari.edu>
+	* Roll a 4.0 tarball.
+	* Tag the 4.0 release.
+
+2003-10-02  Scott Goodwin  <scott@scottg.net>
+
+	* Makefile: extra spaces at the end of one of the lines in the
+        check-env target were causing make failure. Error given was:
+
+        /bin/sh: -c: line 2: syntax error: unexpected end of file
+        make: *** [check-env] Error 2
+
+2003-09-27  Lamar Owen <lowen@pari.edu>
+
+	* Added -lnsdb for AOLserver 4
+	* Added AS3 define for Makefile for building with AOLserver 3
+
+2003-02-17  Lamar Owen <lamar.owen@wgcr.org>
+
+	* tagged and released 4.0beta1
+
+2003-01-09  Lamar Owen <lamar.owen@wgcr.org>
+	
+	* nspostgres.h: changed include order and conditionals for
+	AOLserver 4 use.
+
+2002-12-23  Lamar Owen <lamar.owen@wgcr.org>
+
+	* nspostgres release 3.5 Official
+
+2002-12-18  Lamar Owen <lamar.owen@wgcr.org>
+
+	* nspostgres.h and nspostgres.c: corrected some misinformation
+	in the comments.
+
+	* nspostgres.h: ChangeLog not in comments anymore; neither is the
+	contributor list.
+
+	* corrected contributor list in README.
+
+2002-12-13  Scott S. Goodwin  <scott@scottg.net>
+
+	* Makefile: Added targets for tagging and file release. Do a 'make
+	help' to see it.
+
+	* OVERWRITE: I have taken the latest OpenACS version of their postgres
+	module and overwritten the "pre-don" version. Had to take postgres.c
+	and split it into nspostgres.c and .h. Updated nspostgres Makefile to
+	allow compiling with the ACS flag, and to allow setting POSTGRES var
+	to "LSB" which will cause the module to look for PostgreSQL libraries
+	in the standard Linux locations. Lamar Owen is now primary maintainer
+	of this code.
+
+2002-09-29  Scott Goodwin  <scott@scottg.net>
+
+	* STARTING OVER: I'm tagging the nspostgres tree as "pre-don". Don
+	Baccus is going to be checking out the tree and either working
+	with what I've done here, or replacing it all with the current
+	version of the OpenACS postgres module. The name of the module
+	will stay nspostgres.
+
+2002-07-01  Scott S. Goodwin  <scott@scottg.net>
+
+	* all: reset file perms to 0644 for all files except the CVS
+	directory.
+
+2002-06-02  Scott S. Goodwin  <scott@scottg.net>
+
+	* nspostgres.c: Incorporated latest patches from the postgres
+	module that the OpenACS team maintains.
+
+	* TODO: Removed this file.
+
+2001-12-13  Scott S. Goodwin  <scott@scottg.net>
+
+	* TODO: added this file.
+
+2001-12-03  Scott S. Goodwin  <scott@scottg.net>
+
+	* nspostgres.c: Cleaned up the code comments to conform to
+	AOLserver coding style. Haven't populated most of the comments yet
+	:)
+	
+2001-09-28  Scott S. Goodwin  <scott@scottg.net>
+
+	* nspostgres.h: Split out from nspostgres.c.
+
+	* Makefile: Cleaned up the Makefile. Fixed a problem where libpq
+	wasn't being loaded, so we'd end up with a "function not defined
+	error." In the previous version of the postgres driver, the
+	libpq.so is used in the EXTRA_OBJS variable. I wonder if this
+	means that the libpq.so file is loaded when the nspostgres.so
+	module is loaded. I'm not sure how that works. Now, libpq.a is
+	being used.
+
+2001-09-08  Scott S. Goodwin  <scott@scottg.net>
+
+	* Makefile: Turned off FOR_ACS_USE (I'll investigate what the
+	changes are and possibly integrate that code as the
+	default). Commented out lots and used the default include
+	$(NSHOME)/include/Makefile.module to handle the make and
+	installation process. The following now works:
+
+	make install POSTGRES=/your/path INST=/where/aolserver/is
+
+	* Makefile: changed to accept the
+	POSTGRES=/your/postgres/path. This is mandatory. Also changed to
+	expect NSHOME to be ../aolserver.
+
+2001-08-31  Scott Goodwin  <scott@scottg.net>
+
+	* ChangeLog: Created this ChangeLog file from the notes in the
+	postgres.c file of the original source. This nspostgres module was
+	created from the pgdriver2.0 sources found at OpenACS.org.
+
+2001-04-14  Don Baccus  <dhogaza@pacifier.com>
+
+	* Added Henry Minsky's patch which echoes changes in the Oracle
+	driver to stream blob data directly to the connection rather than
+	first spool to a temp file.  Since the call to return the file to
+	the user doesn't return until after the operation is complete,
+	spooling was a waste of time and resource.
+
+2001-03-01  Don Baccus  <dhogaza@pacifier.com>
+
+	* Added automatic quoting of emulated bind variables in order to
+	make it compatible with the analogous routine in the Oracle
+	driver.
+
+2000-12-30  Dan Wickstrom <dcwickstrom@earthlink.net>
+
+	* Added blob_select_file command.  Needed an inverse to
+	blob_dml_file to support porting of webmail.
+
+	* Added bind variable emulation to support acs 4.0 porting.
+
+2000-03-28 Lamar Owen <lamar.owen@wgcr.org>
+
+	* Merge with AOLserver 3.0rc1's nspostgres.c -- more error
+	checking from Jan Wieck.
+
+	* Also, changed behavior: if the datestyle parameter is not set in
+	config file, set it to be 'iso' by default -- it was not getting
+	correctly set.
+
+	* Wrapped ACS stuff inside FOR_ACS_USE #ifdef's.
+
+	* Added check for the existence of the PGDATESTYLE envvar and do
+	no setting of datestyle if it exists.
+
+	* Take two: make datestyle parameter override envvar, and make the
+	default go away.
+
+2000-02-12  John Beimler  <john@radiomind.com>
+
+	* Added a commented-out block showing settings for Debian/GNU
+	Linux with package installed AOLserver and PostgreSQL
+	
+2000-02-06  Lamar Owen <lamar.owen@wgcr.org>
+	
+	* Added reimplementation of ns_column and ns_table commands --
+	adapted the code in the ArsDigita Oracle driver to work in the
+	PostgreSQL driver's skeleton.  Will revisit this implementation
+	for cleanup once functionality fully verified.
+
+1999-12-13  Lamar Owen  <lamar.owen@wgcr.org>
+
+	* Makefile: Cleaned up assumptions about NSHOME, PGLIB, and PGINC
+	locations.
+
+	* Makefile: Added a commented-out block showing settings for
+	RedHat Linux with the PostgreSQL RPM's installed.
+	
+1999-12-01  Don Baccus  <dhogaza@pacifier.com>
+
+	* Don added the following improvements in December of 1999:
+
+	* 1. When a handle's returned to the pool and the handle's in
+	transaction mode, the driver rolls back the transaction.
+
+	* 2. Reopens crashed backends, retrying query if told to by
+	postmaster.
+
+	* 3. ns_db ntuples now returns the number of tuples affected by
+	"insert", "update", and "delete" queries (only worked for select
+	before).
+
+	* 4. Supports the following, assuming you've named your driver
+	"postgres" in your .ini file:
+
+          [ns/db/driver/postgres]
+          datestyle=iso
+	
+          (or any legal Postgres datestyle)
+	  
+	* 5. The driver's name's been changed from "Postgre95" to
+	"PostgreSQL", the current official name of the database software.
+
