@@ -61,18 +61,18 @@ static void SetTransactionState(Ns_DbHandle *handle, char *sql);
  */
 
 static Ns_DbProc procs[] = {
-    {DbFn_DbType,       DbType},
-    {DbFn_Name,         DbType},
-    {DbFn_OpenDb,       OpenDb},
-    {DbFn_CloseDb,      CloseDb},
-    {DbFn_BindRow,      BindRow},
-    {DbFn_Exec,         Exec},
-    {DbFn_GetRow,       GetRow},
-    {DbFn_GetRowCount,  GetRowCount},
-    {DbFn_Flush,        Flush},
-    {DbFn_Cancel,       Flush},
-    {DbFn_ResetHandle,  ResetHandle},
-    {DbFn_ServerInit,   Ns_PgServerInit},
+    {DbFn_DbType,       (Ns_Callback *)DbType},
+    {DbFn_Name,         (Ns_Callback *)DbType},
+    {DbFn_OpenDb,       (Ns_Callback *)OpenDb},
+    {DbFn_CloseDb,      (Ns_Callback *)CloseDb},
+    {DbFn_BindRow,      (Ns_Callback *)BindRow},
+    {DbFn_Exec,         (Ns_Callback *)Exec},
+    {DbFn_GetRow,       (Ns_Callback *)GetRow},
+    {DbFn_GetRowCount,  (Ns_Callback *)GetRowCount},
+    {DbFn_Flush,        (Ns_Callback *)Flush},
+    {DbFn_Cancel,       (Ns_Callback *)Flush},
+    {DbFn_ResetHandle,  (Ns_Callback *)ResetHandle},
+    {DbFn_ServerInit,   (Ns_Callback *)Ns_PgServerInit},
     {0, NULL}
 };
 
@@ -208,7 +208,7 @@ OpenDb(Ns_DbHandle *handle)
         PQfinish(pgconn);
         return NS_ERROR;
     }
-    Ns_Log(Notice, "nsdbpg(%s):  Openned connection to %s.",
+    Ns_Log(Notice, "nsdbpg(%s):  Opened connection to %s.",
            handle->driver, handle->datasource);
 
     pconn = ns_malloc(sizeof(Connection));
@@ -469,7 +469,8 @@ Exec(Ns_DbHandle *handle, char *sql)
         break;
     case PGRES_COMMAND_OK:
         SetTransactionState(handle, sql);
-        sscanf(PQcmdTuples(pconn->res), "%d", &pconn->nTuples);
+        pconn->nTuples = atoi(PQcmdTuples(pconn->res));
+        /*pconn->nTuples = PQntuples(pconn->res);*/
         result = NS_DML;
         break;
     default:

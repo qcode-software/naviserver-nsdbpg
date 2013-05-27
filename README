@@ -2,19 +2,24 @@
 What is this?
 ------------
 
-This module implements a simple AOLserver database services driver.  A
-database driver is a module which interfaces between the AOLserver
-database-independent nsdb module and the API of a particular DBMS.  A
-database driver's job is to open connections, send SQL statements, and
-translate the results into the form used by nsdb.  In this case, the
-driver is for the PostgreSQL ORDBMS from The PostgreSQL Global Development
-Group.  This is the official driver for the OpenACS project. PostgreSQL can be
-downloaded and installed on most Unix systems.  To use this driver, you
-must have PostgreSQL installed on your system.  For more information on
-PostgreSQL or to download the code, open:
+This module implements a simple AOLserver/NaviServer database services
+driver.  A database driver is a module which interfaces between the
+AOLserver database-independent nsdb module and the API of a particular
+DBMS.  A database driver's job is to open connections, send SQL
+statements, and translate the results into the form used by nsdb.  In
+this case, the driver is for the PostgreSQL ORDBMS from The PostgreSQL
+Global Development Group.  This is the official driver for the OpenACS
+project. PostgreSQL can be downloaded and installed on most Unix
+systems.  To use this driver, you must have PostgreSQL installed on
+your system.  For more information on PostgreSQL or to download the
+code, open:
 
         http://www.postgresql.org
 
+What's new?
+-----------
+
+See Changelog.
 
 How does it work?
 ----------------
@@ -45,6 +50,7 @@ Contributors to this file include:
 	Scott Cannon, Jr.	(SDL/USU)
         Dan Wickstrom           <danw@rtp.ericsson.se>
 	Scott S. Goodwin	<scott@scottg.net>
+        Gustaf Neumann          <neumann@wu-wien.ac.at>
 
 Original example driver by Jim Davidson
 
@@ -53,5 +59,9 @@ DEVELOPER'S GUIDE:
 
 Run 'make help' for developer information.
 
-See the Makefile for further information on building this module.
+Example for a build operation:
 
+    export PG=/usr/local/pg923
+    make PGLIB=$PG/lib PGINCLUDE=$PG/include
+
+See the Makefile for further information on building this module.

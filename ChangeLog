@@ -1,3 +1,37 @@
+2013-04-12 10:12 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e40fd730cbb5 [tip])
+
+        * tclcmds.c:
+        - Introduced new tcl_obj type parsedSQL to keep compiled SQL
+	  state.  When possible, SQL queries are parsed once for bind vars
+	  emulation and the parsed SQL query can be reused later without the
+	  need for re-parsing. This improves the situation also for SQL
+	  queries without bind vars, since the compiled representation is
+	  aware of the fact and does not require string scanning. 
+      - reduce malloc/free operations by avoiding string duplications
+
+2013-04-07 17:28 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (222da1b4b2c3)
+
+        * README, nsdbpg.c, tclcmds.c:
+        - changed cmd interface from TclCmd to TclObjCmd
+        - use caching lookup function (Tcl_GetIndexFromObj) for sub cmd lookup
+           to reduce string comparisons
+        - removed security warnings from static analyzer (potential buffer
+           overruns in scanf)
+        - removed compiler warnings
+        - added sample build line to README
+
+2012-01-09 11:22 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (53b14a13b010)
+
+        * Makefile:
+        Introduced PGINCLUDE and PGLIB to allow separate configuration.
+        Background: MacPorts uses a different directory structure making
+        this necessary.
+
+2012-01-07 17:08 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d88b14cc53a3)
+
+        * nsdbpg.c, tclcmds.c:
+        Fix resource leak Minor code cleanup
+	
 2011-07-97  Gustaf Neumann  <neumann@wu-wien.ac.at>
 	* tclcmds.c: Get rid of deprecated calls.
 	* tclcmds.c: using SQL escape string syntax E'...' when needed (required in

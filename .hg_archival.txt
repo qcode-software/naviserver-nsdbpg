@@ -1,5 +1,4 @@
 repo: a99983b72e60629decf25abe65d40e8a346a6612
-node: da5df230196428cb17d54c7b3d28dfb9cb331a74
+node: 2b239302f68c4dc35f5a5f949bc5d6e285768198
 branch: default
-latesttag: nspostgres-4.0
-latesttagdistance: 26
+tag: naviserver-4.99.5
