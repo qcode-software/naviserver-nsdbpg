@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.5-1) squeeze; urgency=low
+
+  * New upstream version
+
+ -- Qcode Software Ltd <hackers@qcode.co.uk>  Mon, 27 May 2013 16:12:15 +0100
+
 naviserver-nsdbpg (4.99.4-2) squeeze; urgency=low
 
   * Move to stable
