@@ -3,7 +3,7 @@ Section: web
 Priority: optional
 Maintainer: Qcode Software Ltd <hackers@qcode.co.uk>
 Build-Depends: debhelper (>= 7.0.50~), libpq-dev, postgresql-server-dev-9.1, naviserver-dev (>= 4.99.5)
-Standards-Version: 3.9.1
+Standards-Version: 3.9.4
 #Vcs-Git: git://git.debian.org/collab-maint/naviserver-nsdbpg.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/naviserver-nsdbpg.git;a=summary
 
