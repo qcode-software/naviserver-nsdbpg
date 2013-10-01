@@ -10,7 +10,7 @@
 #export DH_VERBOSE=1
 
 override_dh_auto_build:
-	$(MAKE) -f debian/Makefile PGLIB=/usr/lib/postgresql/8.4 PGINCLUDE=/usr/include/postgresql
+	$(MAKE) -f debian/Makefile PGLIB=/usr/lib/postgresql/9.1 PGINCLUDE=/usr/include/postgresql
 
 override_dh_auto_clean:
 	$(MAKE) -f debian/Makefile clean
