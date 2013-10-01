@@ -1,17 +1,20 @@
-This Debian package was created by Qcode <hackers@qcode.co.uk>
+This work was packaged for Debian by:
 
-It was downloaded from https://bitbucket.org/naviserver/nsdbpg
+    Qcode Software Ltd <hackers@qcode.co.uk> on Tues, 28 May 2013 11:26:18 +0100
 
-Upstream Authors: Naviserver Team
+It was downloaded from:
 
-	Don Baccus		<dhogaza@pacifier.com>
-	Lamar Owen		<lamar.owen@wgcr.org>
-	Jan Wieck		<wieck@debis.com>
-	Keith Pasket		(SDL/USU)
-	Scott Cannon, Jr.	(SDL/USU)
-        Dan Wickstrom           <danw@rtp.ericsson.se>
-	Scott S. Goodwin	<scott@scottg.net>
-        Gustaf Neumann          <neumann@wu-wien.ac.at>
+    https://bitbucket.org/naviserver/naviserver
+
+Upstream Authors: 
+
+    Vlad Seryakov vlad@crystalballinc.com
+    Gustaf Neumann neumann@wu-wien.ac.at
+
+    Naviserver Team
+    https://www.ohloh.net/p/naviserver/contributors
+
+Copyright:
 
 MOZILLA PUBLIC LICENSE
 Version 1.1
@@ -523,5 +526,5 @@ If you do not delete the provisions above, a recipient may use your
 version of this file under either the License or the GPL.
 
 
-[ A copy of GPL can be found in /usr/share/common-licenses/GPL ]
+[ The various versions of GPL can be found in /usr/share/common-licenses/ ]
 
