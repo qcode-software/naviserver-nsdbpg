@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.5-wheezy1) UNRELEASED; urgency=low
+
+  * Update compat level and rename version only.
+
+ -- Qcode Software Ltd <hackers@qcode.co.uk>  Thu, 17 Oct 2013 16:55:33 +0100
+
 naviserver-nsdbpg (4.99.5-2) wheezy; urgency=low
 
   * Wheezy rebuild
