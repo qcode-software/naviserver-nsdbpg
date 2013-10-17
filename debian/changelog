@@ -1,4 +1,4 @@
-naviserver-nsdbpg (4.99.5-wheezy1) UNRELEASED; urgency=low
+naviserver-nsdbpg (4.99.5-wheezy1) wheezy; urgency=low
 
   * Update compat level and rename version only.
 
