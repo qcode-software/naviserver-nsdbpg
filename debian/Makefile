@@ -37,7 +37,7 @@ endif
 # Ability to specify include and library separately:
 #
 ifdef PGINCLUDE
-    CFLAGS     = -I$(PGINCLUDE)
+    CFLAGS     = -I$(PGINCLUDE) -Wl,--no-as-needed
 endif
 ifdef PGLIB
     MODLIBS    = -L$(PGLIB) -Wl,-rpath,$(PGLIB)
@@ -48,7 +48,7 @@ endif
 # libraries (legacy and backward compatibility):
 #
 ifdef POSTGRES
-    CFLAGS     = -I$(POSTGRES)/include
+    CFLAGS     = -I$(POSTGRES)/include -Wl,--no-as-needed
     MODLIBS    = -L$(POSTGRES)/lib -Wl,-rpath,$(POSTGRES)/lib
 endif
 
