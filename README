@@ -59,9 +59,17 @@ DEVELOPER'S GUIDE:
 
 Run 'make help' for developer information.
 
-Example for a build operation:
+The build step needs from PostgreSQL 
+ - the include file libpq-fe.h
+ - the library libpq.*
 
-    export PG=/usr/local/pg923
+Examples for a build operation:
+
+    export PG=/usr/local/pg934
     make PGLIB=$PG/lib PGINCLUDE=$PG/include
+
+Under MacPorts, you might use something like:
+    make PGLIB=/opt/local/lib/postgresql93/ PGINCLUDE=/opt/local/include/postgresql93/
+
 
 See the Makefile for further information on building this module.
