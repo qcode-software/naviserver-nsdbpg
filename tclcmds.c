@@ -310,7 +310,13 @@ ParsedSQLFreeInternalRep(
   ParsedSQL *parsedSQLptr = (ParsedSQL *)objPtr->internalRep.twoPtrValue.ptr1;
 
   assert(parsedSQLptr);
-  //fprintf(stderr, "%p ParsedSQLFreeInternalRep freeing ParsedSQL %p refCOunt %d\n", objPtr, parsedSQLptr, objPtr->refCount);
+  /*fprintf(stderr, "%p ParsedSQLFreeInternalRep freeing ParsedSQL %p refCOunt %d # %d frags %p vars %p\n", 
+	  objPtr, 
+	  parsedSQLptr, objPtr->refCount,
+	  parsedSQLptr->nrFragments,
+	  parsedSQLptr->sql_fragments,
+	  parsedSQLptr->bind_variables
+	  );*/
 
   if (parsedSQLptr->sql_fragments)  {string_list_free_list(parsedSQLptr->sql_fragments);}
   if (parsedSQLptr->bind_variables) {string_list_free_list(parsedSQLptr->bind_variables);}
@@ -333,7 +339,7 @@ ParsedSQLDupInternalRep(
 
     //fprintf(stderr, "ParsedSQLDupInternalRep src %p dst %p\n", srcObjPtr, dstObjPtr);
   
-    dstPtr = ns_malloc(sizeof(ParsedSQL));
+    dstPtr = ns_calloc(1, sizeof(ParsedSQL));
     if (srcPtr->sql_fragments) {
 	//fprintf(stderr, "HAVE TO DUP FRAGMENTS OR TO REGENERATE IT\n");
 	dstPtr->sql_fragments = NULL;
@@ -362,7 +368,7 @@ ParsedSQLSetFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     char      *sql    = Tcl_GetString(objPtr);
-    ParsedSQL *srcPtr = ns_malloc(sizeof(ParsedSQL));
+    ParsedSQL *srcPtr = ns_calloc(1, sizeof(ParsedSQL));
 
     /*
      * Parse the query string and find the bind variables.  Return
@@ -491,7 +497,6 @@ PgBindObjCmd(ClientData dummy, Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv
 	 * The obj was a result of a dup operation, we have to
 	 * reparse sql_fragments 
 	 */
-	//fprintf(stderr, "REPARSE\n");
 	parse_bind_variables(sql, &parsedSQLptr->bind_variables, &parsedSQLptr->sql_fragments);
 	parsedSQLptr->nrFragments = string_list_len(parsedSQLptr->bind_variables);
     }
@@ -778,7 +783,7 @@ parse_bind_variables(char *input,
                 state = bind;
                 *fp = '\0';
                 felt = string_list_elt_new(ns_strdup(fragbuf));
-                if(ftail == 0) {
+                if(ftail == NULL) {
                     fhead = ftail = felt;
                 } else {
                     ftail->next = felt;
@@ -805,7 +810,7 @@ parse_bind_variables(char *input,
             } else if (!(*p == '_' || *p == '$' || *p == '#' || isalnum((int)*p))) {
                 *bp = '\0';
                 elt = string_list_elt_new(ns_strdup(bindbuf));
-                if (tail == 0) {
+                if (tail == NULL) {
                     head = tail = elt;
                 } else {
                     tail->next = elt;
@@ -824,20 +829,20 @@ parse_bind_variables(char *input,
     if (state == bind) {
         *bp = '\0';
         elt = string_list_elt_new(ns_strdup(bindbuf));
-        if (tail == 0) {
+        if (tail == NULL) {
             head = tail = elt;
         } else {
             tail->next = elt;
-            tail = elt;
+            /*tail = elt;*/
         }
     } else {
         *fp = '\0';
         felt = string_list_elt_new(ns_strdup(fragbuf));
-        if (ftail == 0) {
+        if (ftail == NULL) {
             fhead = ftail = felt;
         } else {
             ftail->next = felt;
-            ftail = felt;
+            /*ftail = felt;*/
         }
     }
 
@@ -1036,7 +1041,7 @@ stream_actually_write (int fd, Ns_Conn *conn, void *bufp, int length, int to_con
 static int
 blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, char* blob_id, char* value)
 {
-    int         i, j, segment, value_len, segment_len;
+    int         i, j, segment, value_len;
     char        out_buf[8001], query[10000];
     char        *segment_pos, *value_ptr;
 
@@ -1050,7 +1055,7 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, char* blob_id, char* value)
     segment = 1;
 
     while (value_len > 0) {
-        segment_len = value_len > 6000 ? 6000 : value_len;
+        int segment_len = value_len > 6000 ? 6000 : value_len;
         value_len -= segment_len;
         for (i = 0, j = 0; i < segment_len; i += 3, j+=4) {
             encode3((unsigned char*)&value_ptr[i], &out_buf[j]);
