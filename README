@@ -65,11 +65,11 @@ The build step needs from PostgreSQL
 
 Examples for a build operation:
 
-    export PG=/usr/local/pg934
+    export PG=/usr/local/pg935
     make PGLIB=$PG/lib PGINCLUDE=$PG/include
 
 Under MacPorts, you might use something like:
-    make PGLIB=/opt/local/lib/postgresql93/ PGINCLUDE=/opt/local/include/postgresql93/
+    make PGLIB=/opt/local/lib/postgresql94/ PGINCLUDE=/opt/local/include/postgresql94/
 
 
 See the Makefile for further information on building this module.

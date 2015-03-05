@@ -32,16 +32,14 @@
  * dbpg.h --
  *
  *      Private types and declarations for the nsdbpg module.
- *
- *      $Header$
  */
 
 #ifndef DBPG_H
 #define DBPG_H
 
 
-#include "nsdb.h"
-#include "libpq-fe.h"
+#include <nsdb.h>
+#include <libpq-fe.h>
 
 /*
  * The following structure maintains per handle data
@@ -58,8 +56,8 @@ typedef struct Connection {
     int             in_transaction;
 } Connection;
 
-extern char *pgDbName;
-extern int Ns_PgServerInit(char *server, char *module, char *driver);
+extern const char *pgDbName;
+extern int Ns_PgServerInit(const char *server, char *module, char *driver);
 
 
 #endif /* DBPG_H */
