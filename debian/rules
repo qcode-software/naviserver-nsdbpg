@@ -12,7 +12,7 @@ export DH_VERBOSE=1
 override_dh_auto_build:
 	$(MAKE) PGLIB=/usr/lib/ PGINCLUDE=/usr/include/postgresql/
 
-override_db_auto_install:
+override_dh_auto_install:
 	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
 
 %:
