@@ -13,7 +13,9 @@ override_dh_auto_build:
 	$(MAKE) -f debian/Makefile PGLIB=/usr/lib/ PGINCLUDE=/usr/include/postgresql/
 
 override_dh_auto_clean:
-	$(MAKE) -f debian/Makefile clean	
+	$(MAKE) -f debian/Makefile clean
+
+override_dh_auto_test:
 
 %:
 	dh $@ 
