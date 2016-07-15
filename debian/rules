@@ -16,9 +16,8 @@ override_dh_auto_clean:
 	$(MAKE) -f debian/Makefile clean
 
 override_dh_auto_install:
-	$(MAKE) -f debian/Makefile install DESTDIR=$(CURDIR)/debian/tmp
 	mkdir -p $(DESTDIR)$(NAVISERVER)/bin
-	dh_auto_install
+	$(MAKE) -f debian/Makefile install DESTDIR=$(CURDIR)/debian/tmp
 
 override_dh_auto_test:
 
