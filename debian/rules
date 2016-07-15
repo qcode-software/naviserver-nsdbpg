@@ -15,6 +15,9 @@ override_dh_auto_build:
 override_dh_auto_clean:
 	$(MAKE) -f debian/Makefile clean
 
+override_dh_auto_install:
+	$(MAKE) -f debian/Makefile install
+
 override_dh_auto_test:
 
 %:
