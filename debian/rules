@@ -16,7 +16,6 @@ override_dh_auto_clean:
 	$(MAKE) -f debian/Makefile clean
 
 override_dh_auto_test:
-	$(MAKE) -f debian/Makefile test
 
 %:
 	dh $@ 
