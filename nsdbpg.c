@@ -44,14 +44,14 @@ const char *pgDbName = "PostgreSQL";
  */
 
 static const char *DbType(Ns_DbHandle *handle);
-static int     OpenDb(Ns_DbHandle *handle);
-static int     CloseDb(Ns_DbHandle *handle);
+static Ns_ReturnCode OpenDb(Ns_DbHandle *handle);
+static Ns_ReturnCode CloseDb(Ns_DbHandle *handle);
 static Ns_Set *BindRow(Ns_DbHandle *handle);
 static int     Exec(Ns_DbHandle *handle, const char *sql);
 static int     GetRow(const Ns_DbHandle *handle, const Ns_Set *row);
 static int     GetRowCount(const Ns_DbHandle *handle);
-static int     Flush(const Ns_DbHandle *handle);
-static int     ResetHandle(Ns_DbHandle *handle);
+static Ns_ReturnCode Flush(const Ns_DbHandle *handle);
+static Ns_ReturnCode ResetHandle(Ns_DbHandle *handle);
 
 static void SetTransactionState(const Ns_DbHandle *handle, const char *sql);
 
@@ -96,7 +96,7 @@ static unsigned int id = 0u;     /* Global count of connections. */
  *----------------------------------------------------------------------
  */
 
-NS_EXPORT int
+NS_EXPORT Ns_ReturnCode
 Ns_DbDriverInit(const char *driver, const char *configPath)
 {
     const char *style;
@@ -125,6 +125,12 @@ Ns_DbDriverInit(const char *driver, const char *configPath)
             Ns_Log(Notice, "nsdbpg: PGDATESTYLE in effect: %s", style);
         }
     }
+
+    /*
+     * PQlibVersion() was introduced in pg 9.1, so wait until we can rely on it...
+     * Ns_Log(Notice, "nsdbpg: version %s loaded, based on %s", NSDBPG_VERSION, ...);
+     */
+    Ns_Log(Notice, "nsdbpg: version %s loaded", NSDBPG_VERSION);
 
     return NS_OK;
 }
@@ -170,7 +176,7 @@ DbType(Ns_DbHandle *UNUSED(handle))
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 OpenDb(Ns_DbHandle *handle)
 {
     Connection  *pconn;
@@ -249,7 +255,7 @@ OpenDb(Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 CloseDb(Ns_DbHandle *handle) {
 
     Connection *pconn;
@@ -262,7 +268,7 @@ CloseDb(Ns_DbHandle *handle) {
     pconn = handle->connection;
 
     Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s):  Closing connection: %u",
-	   handle->driver, pconn->id);
+	   handle->poolname, pconn->id);
 
     PQfinish(pconn->pgconn);
     ns_free(pconn);
@@ -316,7 +322,7 @@ BindRow(Ns_DbHandle *handle)
         row = handle->row;
 
         for (i = 0; i < pconn->nCols; i++) {
-            Ns_SetPut(row, PQfname(pconn->res, i), NULL);
+            (void)Ns_SetPut(row, PQfname(pconn->res, i), NULL);
         }
     }
     handle->fetchingRows = NS_FALSE;
@@ -370,7 +376,7 @@ Exec(Ns_DbHandle *handle, const char *sql)
     if (dsSql.length > 0 && dsSql.string[dsSql.length - 1] != ';') {
         Ns_DStringAppend(&dsSql, ";");
     }
-    Ns_Log(Ns_LogSqlDebug, "nsdbpg: Querying '%s'", dsSql.string);
+    /*Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Querying '%s'", handle->poolname, dsSql.string);*/
 
     pconn->res = PQexec(pconn->pgconn, dsSql.string);
 
@@ -564,7 +570,7 @@ GetRowCount(const Ns_DbHandle *handle)
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: No connection.");
-        return NS_ERROR;
+        return (int)NS_ERROR;
     }
     pconn = handle->connection;
 
@@ -588,7 +594,7 @@ GetRowCount(const Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 Flush(const Ns_DbHandle *handle)
 {
     Connection *pconn;
@@ -626,7 +632,7 @@ Flush(const Ns_DbHandle *handle)
  *----------------------------------------------------------------------
  */
 
-static int
+static Ns_ReturnCode
 ResetHandle(Ns_DbHandle *handle)
 {
     Connection *pconn;
@@ -639,7 +645,7 @@ ResetHandle(Ns_DbHandle *handle)
     pconn = handle->connection;
 
     if (pconn->in_transaction == NS_TRUE) {
-      Ns_Log(Ns_LogSqlDebug, "nsdbpg: Rolling back transaction.");
+        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
         if (Ns_DbExec(handle, "rollback") != (int)PGRES_COMMAND_OK) {
             Ns_Log(Error, "nsdbpg: Rollback failed.");
         }
@@ -678,17 +684,17 @@ SetTransactionState(const Ns_DbHandle *handle, const char *sql)
     }
     if (strncasecmp(sql, "begin", 5u) == 0) {
         pconn->in_transaction = NS_TRUE;
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg: Entering transaction.");
+        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Entering transaction.", handle->poolname);
 
     } else if (strncasecmp(sql, "end", 3u) == 0
                || strncasecmp(sql, "commit", 6u) == 0) {
         pconn->in_transaction = NS_FALSE;
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg: Committing transaction.");
+        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Committing transaction.", handle->poolname);
 
     } else if (strncasecmp(sql, "abort", 5u) == 0
                || strncasecmp(sql, "rollback", 8u) == 0) {
         pconn->in_transaction = NS_FALSE;
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg: Rolling back transaction.");
+        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
     }
 }
 
