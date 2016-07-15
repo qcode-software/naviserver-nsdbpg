@@ -13,7 +13,7 @@ override_dh_auto_build:
 	$(MAKE) PGLIB=/usr/lib/ PGINCLUDE=/usr/include/postgresql/
 
 override_dh_auto_install:
-	$(MAKE) DESTDIR=$(CURDIR)/debian/tmp install
+	dh_auto_install --sourcedir $(CURDIR)
 
 %:
 	dh $@ 
