@@ -12,9 +12,6 @@ export DH_VERBOSE=1
 override_dh_auto_build:
 	$(MAKE) PGLIB=/usr/lib/ PGINCLUDE=/usr/include/postgresql/
 
-override_dh_auto_clean:
-	$(MAKE) -f debian/Makefile clean
-
 override_dh_auto_install:
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib/naviserver/bin
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
