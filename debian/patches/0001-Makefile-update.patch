@@ -1,0 +1,38 @@
+From: David Osborne <david@qcode.co.uk>
+Date: Mon, 18 Jul 2016 10:56:29 +0100
+Subject: Makefile update
+
+---
+ Makefile | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/Makefile b/Makefile
+index ebd9c62..e7566d1 100755
+--- a/Makefile
++++ b/Makefile
+@@ -27,14 +27,14 @@
+ # version of this file under either the License or the GPL.
+ 
+ ifndef NAVISERVER
+-    NAVISERVER  = /usr/local/ns
++    NAVISERVER  = /usr/lib/naviserver
+ endif
+ 
+ #
+ # Ability to specify include and library separately:
+ #
+ ifdef PGINCLUDE
+-    CFLAGS     = -I$(PGINCLUDE)
++    CFLAGS     = -I$(PGINCLUDE) -Wl,--no-as-needed
+ endif
+ ifdef PGLIB
+     MODLIBS    = -L$(PGLIB) -Wl,-rpath,$(PGLIB)
+@@ -45,7 +45,7 @@ endif
+ # libraries (legacy and backward compatibility):
+ #
+ ifdef POSTGRES
+-    CFLAGS     = -I$(POSTGRES)/include
++    CFLAGS     = -I$(POSTGRES)/include -Wl,--no-as-needed
+     MODLIBS    = -L$(POSTGRES)/lib -Wl,-rpath,$(POSTGRES)/lib
+ endif
+ 
