@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.12~20160715-2) jessie; urgency=medium
+
+  * Use patched Makefile instead of duplicated
+
+ -- Qcode Software Ltd <hackers@qcode.co.uk>  Mon, 18 Jul 2016 10:57:35 +0100
+
 naviserver-nsdbpg (4.99.12~20160715-1) jessie; urgency=medium
 
   * Import from upstream
