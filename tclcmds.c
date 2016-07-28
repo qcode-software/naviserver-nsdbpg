@@ -78,16 +78,16 @@ static int blob_get(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
 static int blob_send_to_stream(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id,
-                               int to_conn_p, const char *filename)
+                               bool to_conn_p, const char *filename)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3);
 
-static int blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, const char *value)
+static int blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *valueObj)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
 static int blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, const char *filename)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static ssize_t write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, int to_conn_p)
+static ssize_t write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, bool to_conn_p)
     NS_GNUC_NONNULL(3);
 
 static unsigned char enc_one(unsigned char c);
@@ -96,7 +96,7 @@ static unsigned char get_one(unsigned char c);
 static void encode3(const unsigned char *p, unsigned char *buf)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void decode3(const unsigned char *p, char *buf, int n)
+static void decode3(const unsigned char *p, unsigned char *buf, int n)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *conn, int fd) 
@@ -123,17 +123,26 @@ static int get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query,
  *----------------------------------------------------------------------
  */
 
-int
-Ns_PgServerInit(const char *server, char *UNUSED(module), char *UNUSED(driver))
+Ns_ReturnCode
+Ns_PgServerInit(const char *server, char *module, char *driver)
 {
-    return Ns_TclRegisterTrace(server, AddCmds, NULL, NS_TCL_TRACE_CREATE);
+    static bool   initialized = NS_FALSE;
+    Ns_ReturnCode status;
+
+    if (!initialized) {
+        initialized = NS_TRUE;
+        status = Ns_TclRegisterTrace(server, AddCmds, NULL, NS_TCL_TRACE_CREATE);
+    } else {
+        status = NS_OK;
+    }
+    return status;
 }
 
-static int
+static Ns_ReturnCode
 AddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 {
-    Tcl_CreateObjCommand(interp, "ns_pg",   PgObjCmd,  NULL, NULL);
-    Tcl_CreateObjCommand(interp, "ns_pg_bind", PgBindObjCmd, NULL, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_pg",      PgObjCmd,     NULL, NULL);
+    (void)Tcl_CreateObjCommand(interp, "ns_pg_bind", PgBindObjCmd, NULL, NULL);
 
     return NS_OK;
 }
@@ -158,11 +167,11 @@ AddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 static int
 PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 {
-    Ns_DbHandle    *handle;
-    Connection     *pconn;
-    int             subcmd, result;
+    Ns_DbHandle      *handle;
+    const Connection *pconn;
+    int               subcmd, result;
 
-    static const char *subcmds[] = {
+    static const char *const subcmds[] = {
 	"blob_write", "blob_get", "blob_put", "blob_dml_file", "blob_select_file", 
 	"db", "host", "options", "port", "number", "error", "status", "ntuples",
 	NULL
@@ -226,7 +235,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *C
                 Ns_TclPrintfResult(interp, "blob_put only allowed in transaction");
                 result = TCL_ERROR;
             } else {
-                result = blob_put(interp, handle, Tcl_GetString(argv[3]), Tcl_GetString(argv[4]));
+                result = blob_put(interp, handle, Tcl_GetString(argv[3]), argv[4]);
             }
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle blobId value");
@@ -313,7 +322,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *C
 
     case StatusIdx:
         if (argc == 3) {
-            Tcl_SetResult(interp, PQstatus(pconn->pgconn) == CONNECTION_OK ? "ok" : "bad", TCL_STATIC);
+            Tcl_SetResult(interp, (PQstatus(pconn->pgconn) == CONNECTION_OK ? (char*)"ok" : (char*)"bad"), TCL_STATIC);
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -403,7 +412,8 @@ ParsedSQLDupInternalRep(
 			Tcl_Obj *srcObjPtr,
 			Tcl_Obj *dstObjPtr)
 {
-    ParsedSQL *srcPtr = (ParsedSQL *)srcObjPtr->internalRep.twoPtrValue.ptr1, *dstPtr;
+    const ParsedSQL *srcPtr = (const ParsedSQL *)srcObjPtr->internalRep.twoPtrValue.ptr1;
+    ParsedSQL       *dstPtr;
 
     dstPtr = ns_calloc(1U, sizeof(ParsedSQL));
     if (srcPtr->sql_fragments != NULL) {
@@ -474,21 +484,21 @@ ParsedSQLSetFromAny(Tcl_Interp *UNUSED(interp),
 static int
 PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 {
-    linkedListElement_t *bind_variables;
-    linkedListElement_t *var_p;
-    linkedListElement_t *sql_fragments;
-    linkedListElement_t *frag_p;
-    Ns_DString         ds, *dsPtr = NULL;
-    Tcl_Obj           *sqlObj;
-    ParsedSQL         *parsedSQLptr;
-    Ns_DbHandle       *handle;
-    Ns_Set            *rowPtr, *set = NULL;
-    const char        *sql, *cmd, *p, *value = NULL;
-    const char        *arg3 = (argc > 3) ? Tcl_GetString(argv[3]) : NULL;
-    int                result, subcmd, nrFragments;
-    int                haveBind = (arg3 != NULL) ? STREQ("-bind", arg3) : 0;
+    linkedListElement_t       *bind_variables, *sql_fragments;
+    const linkedListElement_t *var_p;
+    const linkedListElement_t *frag_p;
+    Ns_DString                 ds, *dsPtr = NULL;
+    Tcl_Obj                   *sqlObj;
+    ParsedSQL                 *parsedSQLptr;
+    Ns_DbHandle               *handle;
+    Ns_Set                    *rowPtr;    
+    const Ns_Set              *set = NULL;
+    const char                *sql, *cmd, *p, *value = NULL;
+    const char                *arg3 = (argc > 3) ? Tcl_GetString(argv[3]) : NULL;
+    int                        result, subcmd, nrFragments;
+    bool                       haveBind = (arg3 != NULL) ? STREQ("-bind", arg3) : NS_FALSE;
 
-    static const char *subcmds[] = {
+    static const char *const subcmds[] = {
 	"dml", "1row", "0or1row", "select", "exec", 
 	NULL
     };
@@ -498,11 +508,11 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
     };
 
     if (argc < 4 
-	|| (haveBind == 0 && (argc != 4))
-        || (haveBind != 0 && (argc != 6))) {
+	|| (!haveBind && (argc != 4))
+        || (haveBind  && (argc != 6))) {
         return BadArgs(interp, argv, "dbId sql");
     }
-
+    
     result = Tcl_GetIndexFromObj(interp, argv[1], subcmds, "ns_pg_bind subcmd", 0, &subcmd);
     if (result != TCL_OK) {
         return TCL_ERROR;
@@ -528,7 +538,7 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
 
     cmd = Tcl_GetString(argv[1]);
 
-    if (haveBind != 0) {
+    if (haveBind) {
 	const char *setId = Tcl_GetString(argv[4]);
         set = Ns_TclGetSet(interp, setId);
         if (set == NULL) {
@@ -587,7 +597,7 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
 
             if (var_p != NULL) {
                 if (set == NULL) {
-                    value = Tcl_GetVar(interp, var_p->chars, 0);
+                    value = Tcl_GetVar2(interp, var_p->chars, NULL, 0);
                 } else {
                     value = Ns_SetGet(set, var_p->chars);
                 }
@@ -610,7 +620,7 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
 		    /*
 		     * Determine, if we need the SQL escape string syntax E'...'
 		     */
-		    for (p = value; *p; p++) {
+		    for (p = value; *p != '\0'; p++) {
 		        if (unlikely(*p == '\\')) {
 			    needEscapeStringSyntax = 1;
 			    break;
@@ -631,7 +641,7 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
                      * We need to double-quote quotes and
                      * escape backslashes inside the value.
                      */
-                    for (p = value; *p; p++) {
+                    for (p = value; *p != '\0'; p++) {
                         if (unlikely(*p == '\'')) {
                             if (likely(p > value)) {
                                 Ns_DStringNAppend(dsPtr, value, p - value);
@@ -751,14 +761,16 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
 static int
 DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, const char *sql)
 {
-    Connection *pconn = handle->connection;
-    const char *pqerror;
+    const Connection *pconn;
+    const char       *pqerror;
 
-    assert(interp != NULL);
-    assert(handle != NULL);
-    assert(cmd != NULL);
-    assert(sql != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(cmd != NULL);
+    NS_NONNULL_ASSERT(sql != NULL);
 
+    pconn = handle->connection;
+    
     Tcl_AppendResult(interp, "Database operation \"", cmd, "\" failed", NULL);
     if (handle->cExceptionCode[0] != '\0') {
         Tcl_AppendResult(interp, " (exception ", handle->cExceptionCode,
@@ -802,9 +814,7 @@ BadArgs(Tcl_Interp *interp, Tcl_Obj *CONST argv[], const char *args)
 {
     Tcl_AppendResult(interp, "wrong # args: should be \"",
 		     Tcl_GetString(argv[0]), " ", Tcl_GetString(argv[1]), NULL);
-    if (args != NULL) {
-        Tcl_AppendResult(interp, " ", args, NULL);
-    }
+    Tcl_AppendResult(interp, " ", args, NULL);
     Tcl_AppendResult(interp, "\"", NULL);
 
     return TCL_ERROR;
@@ -838,12 +848,12 @@ parse_bind_variables(const char *input,
     char        *bindbuf, *bp, *fragbuf, *fp, lastchar;
     int          current_string_length = 0;
     size_t       inputLen;
-    linkedListElement_t *elt,  *head=0,  *tail=0;
-    linkedListElement_t *felt, *fhead=0, *ftail=0;
+    linkedListElement_t *elt,  *head=NULL,  *tail=NULL;
+    linkedListElement_t *felt, *fhead=NULL, *ftail=NULL;
 
-    assert(input != NULL);
-    assert(bind_variables != NULL);
-    assert(fragments != NULL);
+    NS_NONNULL_ASSERT(input != NULL);
+    NS_NONNULL_ASSERT(bind_variables != NULL);
+    NS_NONNULL_ASSERT(fragments != NULL);
 
     inputLen = strlen(input);
     fragbuf = ns_malloc((inputLen + 1U) * sizeof(char));
@@ -851,7 +861,7 @@ parse_bind_variables(const char *input,
     bindbuf = ns_malloc((inputLen + 1U) * sizeof(char));
     bp = bindbuf;
 
-    for (p = input, state=base, lastchar='\0'; *p != '\0'; lastchar = *p, p++) {
+    for (p = input, state = base, lastchar = '\0'; *p != '\0'; lastchar = *p, p++) {
 
         switch (state) {
         case base:
@@ -948,21 +958,25 @@ parse_bind_variables(const char *input,
 static int
 get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *conn, int fd) 
 {
-    Connection *pconn = handle->connection;
-    char       *segment_pos;
-    int         segment = 1;
+    const Connection *pconn;
+    char             *segment_pos;
+    int               segment = 1;
 
-    assert(interp != NULL);
-    assert(handle != NULL);
-    assert(query != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(query != NULL);
 
+    pconn = handle->connection;
     segment_pos = query + strlen(query);
 
     for (;;) {
-	const char *data_column;
-	int         i, j, n, byte_len;
-	char        buf[6001] = "";
+	const unsigned char *data_column;
+        const unsigned char *raw_data;
+	int                  i, j, n, byte_len;
+        size_t               obtained_length;
+	unsigned char        buf[6001];
 
+        buf[0] = UCHAR('\0');
 	sprintf(segment_pos, "%d", segment);
 	if (Ns_DbExec(handle, query) != NS_ROWS) {
 	    Tcl_AppendResult(interp, "Error selecting data from BLOB", NULL);
@@ -974,21 +988,20 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
 	}
 
 	byte_len = strtol(PQgetvalue(pconn->res, 0, 0), NULL, 10);
-	data_column = PQgetvalue(pconn->res, 0, 1);
-	/* 
-	   nbytes is not used 
-	   nbytes += byte_len;
-	*/
+	raw_data = (const unsigned char *)PQgetvalue(pconn->res, 0, 1);
+        data_column = PQunescapeBytea(raw_data, &obtained_length);
+
 	n = byte_len;
 	for (i = 0, j = 0; n > 0; i += 4, j += 3, n -= 3) {
 	    decode3((const unsigned char*)&data_column[i], &buf[j], n);
 	}
+        
+        PQfreemem((char*)data_column);
 
 	if (fd != NS_INVALID_FD || conn != NULL) {
-	    (void) write_to_stream(fd, conn, buf, (size_t)byte_len, (conn != NULL) ? 1 : 0);
+	    (void) write_to_stream(fd, conn, buf, (size_t)byte_len, (conn != NULL) ? NS_TRUE : NS_FALSE);
 	} else {
-	    buf[byte_len] = '\0';
-	    Tcl_AppendResult(interp, buf, NULL);
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)buf, byte_len));
 	}
 	segment++;
     }
@@ -1000,19 +1013,20 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
 static int
 blob_get(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id)
 {
-    Connection *pconn = handle->connection;
+    Connection *pconn;
     char        query[100];
     int         result;
 
-    assert(interp != NULL);
-    assert(handle != NULL);
-    assert(lob_id != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(lob_id != NULL);
 
+    pconn = handle->connection;
     strcpy(query, "SELECT BYTE_LEN, DATA FROM LOB_DATA WHERE LOB_ID = ");
     strcat(query, lob_id);
     strcat(query, " AND SEGMENT = ");
 
-    result = get_blob_tuples(interp, handle, query, NULL, 0); 
+    result = get_blob_tuples(interp, handle, query, NULL, NS_INVALID_FD); 
 
     PQclear(pconn->res);
     pconn->res = NULL;
@@ -1036,18 +1050,19 @@ blob_get(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id)
 
 static int
 blob_send_to_stream(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id,
-		    int to_conn_p, const char *filename)
+		    bool to_conn_p, const char *filename)
 {
-    Connection  *pconn = handle->connection;
+    Connection  *pconn;
     Ns_Conn     *conn = NULL;
     char         query[100];
     int          fd = -1, result = TCL_OK;
 
-    assert(interp != NULL);
-    assert(handle != NULL);
-    assert(lob_id != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(lob_id != NULL);
 
-    if (to_conn_p != 0) {
+    pconn = handle->connection;
+    if (to_conn_p) {
         conn = Ns_TclGetConn(interp);
 
         if (conn == NULL) {
@@ -1083,7 +1098,7 @@ blob_send_to_stream(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id,
     result = get_blob_tuples(interp, handle, query, conn, fd); 
 
  bailout:
-    if (to_conn_p == 0) {
+    if (!to_conn_p) {
         (void) ns_close(fd);
     }
 
@@ -1100,17 +1115,17 @@ blob_send_to_stream(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id,
  * Lifted from Oracle driver.
  */
 static ssize_t
-write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, int to_conn_p)
+write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, bool to_conn_p)
 {
     ssize_t bytes_written = 0;
 
-    assert(bufp != NULL);
+    NS_NONNULL_ASSERT(bufp != NULL);
     assert(fd != NS_INVALID_FD || conn != NULL);
 
-    if (to_conn_p != 0) {
+    if (to_conn_p) {
         size_t n = Ns_ConnContentSent(conn);
 
-        if (Ns_ConnWriteData(conn, bufp, length, 0u) == NS_OK) {
+        if (Ns_ConnWriteData(conn, bufp, length, NS_CONN_STREAM) == NS_OK) {
             bytes_written = (ssize_t)Ns_ConnContentSent(conn) - (ssize_t)n;
         } else {
             bytes_written = 0;
@@ -1127,35 +1142,35 @@ write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, int to_c
  */
 
 static int
-blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, const char *value)
+blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *valueObj)
 {
-    int            i, j, segment, value_len;
-    unsigned char  out_buf[8001];
-    const unsigned char  *value_ptr;
-    char           query[10000];
-    char          *segment_pos;
+    int                  i, j, segment, value_len;
+    unsigned char        out_buf[8001];
+    const unsigned char *value_ptr;
+    char                 query[10000], *segment_pos;
 
-    assert(interp != NULL);
-    assert(handle != NULL);
-    assert(blob_id != NULL);
-    assert(value != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(blob_id != NULL);
+    NS_NONNULL_ASSERT(valueObj != NULL);
 
-    value_len = (int)strlen(value);
-    value_ptr = (const unsigned char*)value;
+    value_ptr = Tcl_GetByteArrayFromObj(valueObj, &value_len);
 
     strcpy(query, "INSERT INTO LOB_DATA VALUES(");
     strcat(query, blob_id);
     strcat(query, ",");
     segment_pos = query + strlen(query);
     segment = 1;
-
+    
     while (value_len > 0) {
         int segment_len = value_len > 6000 ? 6000 : value_len;
+        
         value_len -= segment_len;
         for (i = 0, j = 0; i < segment_len; i += 3, j+=4) {
             encode3(&value_ptr[i], &out_buf[j]);
         }
         out_buf[j] = UCHAR('\0');
+        
         sprintf(segment_pos, "%d, %d, '%s')", segment, segment_len, out_buf);
         if (Ns_DbExec(handle, query) != NS_DML) {
             Tcl_AppendResult(interp, "Error inserting data into BLOB", NULL);
@@ -1164,7 +1179,6 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, const cha
         value_ptr += segment_len;
         segment++;
     }
-    Ns_Log(Notice, "done");
 
     return TCL_OK;
 }
@@ -1181,10 +1195,10 @@ blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, cons
     unsigned char in_buf[6000], out_buf[8001];
     char         *segment_pos;
 
-    assert(interp != NULL);
-    assert(handle != NULL);
-    assert(blob_id != NULL);
-    assert(filename != NULL);
+    NS_NONNULL_ASSERT(interp != NULL);
+    NS_NONNULL_ASSERT(handle != NULL);
+    NS_NONNULL_ASSERT(blob_id != NULL);
+    NS_NONNULL_ASSERT(filename != NULL);
 
     fd = ns_open(filename, O_RDONLY, 0);
 
@@ -1246,7 +1260,7 @@ linkedListElement_new(const char *chars)
 {
     linkedListElement_t *elt;
 
-    assert(chars != NULL);
+    NS_NONNULL_ASSERT(chars != NULL);
 
     elt = ns_malloc(sizeof(linkedListElement_t));
     elt->chars = chars;
@@ -1275,9 +1289,9 @@ linkedListElement_new(const char *chars)
 static int
 LinkedList_len(const linkedListElement_t *head)
 {
-    int n;
+    int n = 0;
 
-    for (n = 0; head != NULL; head = head->next) {
+    for (; head != NULL; head = head->next) {
         n++;
     }
     return n;
@@ -1352,7 +1366,7 @@ encode3(const unsigned char *p, unsigned char *buf)
 
 
 /* single-character decode */
-#define DEC(c)  (((c) - UCHAR(' ')) & 0x3Fu)
+#define DEC(c)  ((UCHAR(c) - UCHAR(' ')) & 0x3Fu)
 
 static unsigned char
 get_one(unsigned char c)
@@ -1366,12 +1380,12 @@ get_one(unsigned char c)
 }
 
 static void
-decode3(const unsigned char *p, char *buf, int n)
+decode3(const unsigned char *p, unsigned char *buf, int n)
 {
     unsigned char c1, c2, c3, c4;
 
-    assert(p != NULL);
-    assert(buf != NULL);
+    NS_NONNULL_ASSERT(p != NULL);
+    NS_NONNULL_ASSERT(buf != NULL);
 
     c1 = get_one(p[0]);
     c2 = get_one(p[1]);

@@ -37,6 +37,7 @@
 #ifndef DBPG_H
 #define DBPG_H
 
+#define NSDBPG_VERSION "2.1"
 
 #include <nsdb.h>
 #include <libpq-fe.h>
@@ -53,7 +54,7 @@ typedef struct Connection {
     int             nCols;
     int             nTuples;
     int             curTuple;
-    int             in_transaction;
+    bool            in_transaction;
 } Connection;
 
 extern const char *pgDbName;

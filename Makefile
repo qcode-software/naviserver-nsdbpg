@@ -56,3 +56,4 @@ HDRS       = dbpg.h
 MODLIBS    += -lnsdb -lpq
 
 include  $(NAVISERVER)/include/Makefile.module
+
