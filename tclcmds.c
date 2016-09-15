@@ -96,7 +96,7 @@ static unsigned char get_one(unsigned char c);
 static void encode3(const unsigned char *p, unsigned char *buf)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void decode3(const unsigned char *p, char *buf, int n)
+static void decode3(const unsigned char *p, unsigned char *buf, int n)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *conn, int fd) 
@@ -167,9 +167,9 @@ AddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 static int
 PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 {
-    Ns_DbHandle    *handle;
-    Connection     *pconn;
-    int             subcmd, result;
+    Ns_DbHandle      *handle;
+    const Connection *pconn;
+    int               subcmd, result;
 
     static const char *const subcmds[] = {
 	"blob_write", "blob_get", "blob_put", "blob_dml_file", "blob_select_file", 
@@ -231,7 +231,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *C
 
     case BlobPutIdx: 
         if (argc == 5) {
-            if (pconn->in_transaction == 0) {
+            if (!pconn->in_transaction) {
                 Ns_TclPrintfResult(interp, "blob_put only allowed in transaction");
                 result = TCL_ERROR;
             } else {
@@ -245,7 +245,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *C
 
     case BlobDmlFileIdx:
         if (argc == 5) {
-            if (pconn->in_transaction == 0) {
+            if (!pconn->in_transaction) {
                 Ns_TclPrintfResult(interp, "blob_dml_file only allowed in transaction");
                 result = TCL_ERROR;
             } else {
@@ -322,7 +322,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *C
 
     case StatusIdx:
         if (argc == 3) {
-            Tcl_SetResult(interp, (char*)(PQstatus(pconn->pgconn) == CONNECTION_OK ? "ok" : "bad"), TCL_STATIC);
+            Tcl_SetResult(interp, (PQstatus(pconn->pgconn) == CONNECTION_OK ? (char*)"ok" : (char*)"bad"), TCL_STATIC);
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -412,7 +412,8 @@ ParsedSQLDupInternalRep(
 			Tcl_Obj *srcObjPtr,
 			Tcl_Obj *dstObjPtr)
 {
-    ParsedSQL *srcPtr = (ParsedSQL *)srcObjPtr->internalRep.twoPtrValue.ptr1, *dstPtr;
+    const ParsedSQL *srcPtr = (const ParsedSQL *)srcObjPtr->internalRep.twoPtrValue.ptr1;
+    ParsedSQL       *dstPtr;
 
     dstPtr = ns_calloc(1U, sizeof(ParsedSQL));
     if (srcPtr->sql_fragments != NULL) {
@@ -483,16 +484,18 @@ ParsedSQLSetFromAny(Tcl_Interp *UNUSED(interp),
 static int
 PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 {
-    linkedListElement_t *bind_variables, *var_p, *sql_fragments, *frag_p;
-    Ns_DString           ds, *dsPtr = NULL;
-    Tcl_Obj             *sqlObj;
-    ParsedSQL           *parsedSQLptr;
-    Ns_DbHandle         *handle;
-    Ns_Set              *rowPtr, *set = NULL;
-    const char          *sql, *cmd, *p, *value = NULL;
-    const char          *arg3 = (argc > 3) ? Tcl_GetString(argv[3]) : NULL;
-    int                  result, subcmd, nrFragments;
-    bool                 haveBind = (arg3 != NULL) ? STREQ("-bind", arg3) : 0;
+    const linkedListElement_t *bind_variables, *sql_fragments;
+    const linkedListElement_t *var_p, *frag_p;
+    Ns_DString                 ds, *dsPtr = NULL;
+    Tcl_Obj                   *sqlObj;
+    ParsedSQL                 *parsedSQLptr;
+    Ns_DbHandle               *handle;
+    Ns_Set                    *rowPtr;    
+    const Ns_Set              *set = NULL;
+    const char                *sql, *cmd, *p, *value = NULL;
+    const char                *arg3 = (argc > 3) ? Tcl_GetString(argv[3]) : NULL;
+    int                        result, subcmd, nrFragments;
+    bool                       haveBind = (arg3 != NULL) ? STREQ("-bind", arg3) : NS_FALSE;
 
     static const char *const subcmds[] = {
 	"dml", "1row", "0or1row", "select", "exec", 
@@ -757,8 +760,8 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
 static int
 DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, const char *sql)
 {
-    Connection *pconn;
-    const char *pqerror;
+    const Connection *pconn;
+    const char       *pqerror;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
@@ -844,8 +847,8 @@ parse_bind_variables(const char *input,
     char        *bindbuf, *bp, *fragbuf, *fp, lastchar;
     int          current_string_length = 0;
     size_t       inputLen;
-    linkedListElement_t *elt,  *head=0,  *tail=0;
-    linkedListElement_t *felt, *fhead=0, *ftail=0;
+    linkedListElement_t *elt,  *head=NULL,  *tail=NULL;
+    linkedListElement_t *felt, *fhead=NULL, *ftail=NULL;
 
     NS_NONNULL_ASSERT(input != NULL);
     NS_NONNULL_ASSERT(bind_variables != NULL);
@@ -954,9 +957,9 @@ parse_bind_variables(const char *input,
 static int
 get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *conn, int fd) 
 {
-    Connection *pconn;
-    char       *segment_pos;
-    int         segment = 1;
+    const Connection *pconn;
+    char             *segment_pos;
+    int               segment = 1;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
@@ -968,10 +971,11 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
     for (;;) {
 	const unsigned char *data_column;
         const unsigned char *raw_data;
-	int         i, j, n, byte_len;
-        size_t      obtained_length;
-	char        buf[6001] = "";
+	int                  i, j, n, byte_len;
+        size_t               obtained_length;
+	unsigned char        buf[6001];
 
+        buf[0] = UCHAR('\0');
 	sprintf(segment_pos, "%d", segment);
 	if (Ns_DbExec(handle, query) != NS_ROWS) {
 	    Tcl_AppendResult(interp, "Error selecting data from BLOB", NULL);
@@ -1375,7 +1379,7 @@ get_one(unsigned char c)
 }
 
 static void
-decode3(const unsigned char *p, char *buf, int n)
+decode3(const unsigned char *p, unsigned char *buf, int n)
 {
     unsigned char c1, c2, c3, c4;
 

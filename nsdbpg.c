@@ -566,7 +566,7 @@ GetRow(const Ns_DbHandle *handle, const Ns_Set *row)
 static int
 GetRowCount(const Ns_DbHandle *handle)
 {
-    Connection  *pconn;
+    const Connection  *pconn;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: No connection.");
@@ -635,7 +635,7 @@ Flush(const Ns_DbHandle *handle)
 static Ns_ReturnCode
 ResetHandle(Ns_DbHandle *handle)
 {
-    Connection *pconn;
+    const Connection *pconn;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");

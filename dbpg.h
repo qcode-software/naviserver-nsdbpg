@@ -54,7 +54,7 @@ typedef struct Connection {
     int             nCols;
     int             nTuples;
     int             curTuple;
-    int             in_transaction;
+    bool            in_transaction;
 } Connection;
 
 extern const char *pgDbName;
