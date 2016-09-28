@@ -99,40 +99,41 @@ static unsigned int id = 0u;     /* Global count of connections. */
 NS_EXPORT Ns_ReturnCode
 Ns_DbDriverInit(const char *driver, const char *configPath)
 {
-    const char *style;
+    Ns_ReturnCode status = NS_OK;
 
-    if (Ns_DbRegisterDriver(driver, &procs[0]) != NS_OK) {
-        return NS_ERROR;
-    }
-
-    style = Ns_ConfigGetValue(configPath, "datestyle");
-    if (style != NULL) {
-        if (STRIEQ(style, "ISO") || STRIEQ(style, "SQL")
-            || STRIEQ(style, "POSTGRES") || STRIEQ(style, "GERMAN")
-            || STRIEQ(style, "NONEURO") || STRIEQ(style, "EURO")) {
-            Ns_DString  ds;
-
-            Ns_DStringInit(&ds);
-            Ns_DStringPrintf(&ds, "set datestyle to '%s'", style);
-            dateStyle = Ns_DStringExport(&ds);
-            Ns_Log(Notice, "nsdbpg: Using datestyle: %s", style);
-        } else {
-            Ns_Log(Error, "nsdbpg: Illegal value for datestyle: %s", style);
-        }
+    if (Ns_DbRegisterDriver(driver, &procs[0]) == NS_OK) {
+        status = NS_ERROR;
+        
     } else {
-        style = getenv("PGDATESTYLE");
+        const char *style = Ns_ConfigGetValue(configPath, "datestyle");
+        
         if (style != NULL) {
-            Ns_Log(Notice, "nsdbpg: PGDATESTYLE in effect: %s", style);
+            if (STRIEQ(style, "ISO") || STRIEQ(style, "SQL")
+                || STRIEQ(style, "POSTGRES") || STRIEQ(style, "GERMAN")
+                || STRIEQ(style, "NONEURO") || STRIEQ(style, "EURO")) {
+                Ns_DString  ds;
+
+                Ns_DStringInit(&ds);
+                Ns_DStringPrintf(&ds, "set datestyle to '%s'", style);
+                dateStyle = Ns_DStringExport(&ds);
+                Ns_Log(Notice, "nsdbpg: Using datestyle: %s", style);
+            } else {
+                Ns_Log(Error, "nsdbpg: Illegal value for datestyle: %s", style);
+            }
+        } else {
+            style = getenv("PGDATESTYLE");
+            if (style != NULL) {
+                Ns_Log(Notice, "nsdbpg: PGDATESTYLE in effect: %s", style);
+            }
         }
+
+        /*
+         * PQlibVersion() was introduced in pg 9.1, so wait until we can rely on it...
+         * Ns_Log(Notice, "nsdbpg: version %s loaded, based on %s", NSDBPG_VERSION, ...);
+         */
+        Ns_Log(Notice, "nsdbpg: version %s loaded", NSDBPG_VERSION);
     }
-
-    /*
-     * PQlibVersion() was introduced in pg 9.1, so wait until we can rely on it...
-     * Ns_Log(Notice, "nsdbpg: version %s loaded, based on %s", NSDBPG_VERSION, ...);
-     */
-    Ns_Log(Notice, "nsdbpg: version %s loaded", NSDBPG_VERSION);
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -179,10 +180,11 @@ DbType(Ns_DbHandle *UNUSED(handle))
 static Ns_ReturnCode
 OpenDb(Ns_DbHandle *handle)
 {
-    Connection  *pconn;
-    PGconn      *pgconn;
-    Ns_DString   ds;
-    char        *host, *port, *db = NULL;
+    Connection   *pconn;
+    PGconn       *pgconn;
+    Ns_DString    ds;
+    char         *host, *port, *db = NULL;
+    Ns_ReturnCode status = NS_OK;
 
     if (handle == NULL || handle->datasource == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid handle.");
@@ -192,50 +194,51 @@ OpenDb(Ns_DbHandle *handle)
     Ns_DStringInit(&ds);
     Ns_DStringAppend(&ds, handle->datasource);
     host = ds.string;
-    port = strchr(host, ':');
+    port = strchr(host, INTCHAR(':'));
     if (port != NULL) {
-        db = strchr(port + 1, ':');
+        db = strchr(port + 1, INTCHAR(':'));
     }
     if (db == NULL) {
         Ns_Log(Error, "nsdbpg(%s):  Malformed datasource: \" %s\". "
                "Should be host:port:database.",
                handle->driver, handle->datasource);
-        return NS_ERROR;
-    }
+        status = NS_ERROR;
 
-    *port++ = '\0';
-    *db++ = '\0';
-    if (STREQ(host, "localhost")) {
-        Ns_Log(Notice, "nsdbpg: Opening %s on %s", db, host);
-        pgconn = PQsetdbLogin(NULL, port, NULL, NULL, db, handle->user,
-                             handle->password);
     } else {
-        Ns_Log(Notice, "nsdbpg: Opening %s on %s, port %s", db, host, port);
-        pgconn = PQsetdbLogin(host, port, NULL, NULL, db, handle->user,
-                             handle->password);
-    }
-    if (PQstatus(pgconn) != CONNECTION_OK) {
-        Ns_Log(Error, "nsdbpg(%s):  Could not connect to %s: %s",
-               handle->driver, handle->datasource, PQerrorMessage(pgconn));
-        PQfinish(pgconn);
-        return NS_ERROR;
-    }
-    Ns_Log(Notice, "nsdbpg(%s):  Opened connection to %s.",
-           handle->driver, handle->datasource);
+        *port++ = '\0';
+        *db++ = '\0';
+        if (STREQ(host, "localhost")) {
+            Ns_Log(Notice, "nsdbpg: Opening %s on %s", db, host);
+            pgconn = PQsetdbLogin(NULL, port, NULL, NULL, db, handle->user,
+                                  handle->password);
+        } else {
+            Ns_Log(Notice, "nsdbpg: Opening %s on %s, port %s", db, host, port);
+            pgconn = PQsetdbLogin(host, port, NULL, NULL, db, handle->user,
+                                  handle->password);
+        }
+        if (PQstatus(pgconn) != CONNECTION_OK) {
+            Ns_Log(Error, "nsdbpg(%s):  Could not connect to %s: %s",
+                   handle->driver, handle->datasource, PQerrorMessage(pgconn));
+            PQfinish(pgconn);
+            status = NS_ERROR;
+        } else {
+            Ns_Log(Notice, "nsdbpg(%s):  Opened connection to %s.",
+                   handle->driver, handle->datasource);
 
-    pconn = ns_malloc(sizeof(Connection));
-    pconn->pgconn = pgconn;
-    pconn->res = NULL;
-    pconn->id = id++;
-    pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
-    pconn->in_transaction = NS_FALSE;
-    handle->connection = pconn;
-
-    if (dateStyle != NULL && Ns_DbExec(handle, dateStyle) != NS_DML) {
-        return NS_ERROR;
+            pconn = ns_malloc(sizeof(Connection));
+            pconn->pgconn = pgconn;
+            pconn->res = NULL;
+            pconn->id = id++;
+            pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
+            pconn->in_transaction = NS_FALSE;
+            handle->connection = pconn;
+        
+            if (dateStyle != NULL && Ns_DbExec(handle, dateStyle) != NS_DML) {
+                status = NS_ERROR;
+            }
+        }
     }
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -257,24 +260,23 @@ OpenDb(Ns_DbHandle *handle)
 
 static Ns_ReturnCode
 CloseDb(Ns_DbHandle *handle) {
-
-    Connection *pconn;
+    Ns_ReturnCode status = NS_OK;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");
-        return NS_ERROR;
+        status = NS_ERROR;
+        
+    } else {
+        Connection *pconn = handle->connection;
+
+        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s):  Closing connection: %u",
+               handle->poolname, pconn->id);
+        
+        PQfinish(pconn->pgconn);
+        ns_free(pconn);
+        handle->connection = NULL;
     }
-
-    pconn = handle->connection;
-
-    Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s):  Closing connection: %u",
-	   handle->poolname, pconn->id);
-
-    PQfinish(pconn->pgconn);
-    ns_free(pconn);
-    handle->connection = NULL;
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -297,35 +299,32 @@ CloseDb(Ns_DbHandle *handle) {
 static Ns_Set *
 BindRow(Ns_DbHandle *handle)
 {
-    Connection  *pconn;
-    Ns_Set      *row;
+    Ns_Set      *row = NULL;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");
-        return NULL;
-    }
 
-    if (handle->fetchingRows == 0) {
+    } else if (handle->fetchingRows == 0) {
         Ns_Log(Error, "nsdbpg(%s): No rows waiting to bind.", handle->datasource);
-        return NULL;
-    }
 
-    pconn = handle->connection;    
-    row = handle->row;
-
-    if (PQresultStatus(pconn->res) == PGRES_TUPLES_OK) {
-        int i;
-
-        pconn->curTuple = 0;
-        pconn->nCols = PQnfields(pconn->res);
-        pconn->nTuples = PQntuples(pconn->res);
+    } else {
+        Connection *pconn = handle->connection;
+            
         row = handle->row;
+        if (PQresultStatus(pconn->res) == PGRES_TUPLES_OK) {
+            int i;
+            
+            pconn->curTuple = 0;
+            pconn->nCols = PQnfields(pconn->res);
+            pconn->nTuples = PQntuples(pconn->res);
+            row = handle->row;
 
-        for (i = 0; i < pconn->nCols; i++) {
-            (void)Ns_SetPut(row, PQfname(pconn->res, i), NULL);
+            for (i = 0; i < pconn->nCols; i++) {
+                (void)Ns_SetPut(row, PQfname(pconn->res, i), NULL);
+            }
         }
+        handle->fetchingRows = NS_FALSE;
     }
-    handle->fetchingRows = NS_FALSE;
 
     return row;
 }
@@ -566,15 +565,16 @@ GetRow(const Ns_DbHandle *handle, const Ns_Set *row)
 static int
 GetRowCount(const Ns_DbHandle *handle)
 {
-    const Connection  *pconn;
+    int result;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: No connection.");
-        return (int)NS_ERROR;
+        result = (int)NS_ERROR;
+    } else {
+        const Connection *pconn = handle->connection;
+        result = pconn->nTuples;
     }
-    pconn = handle->connection;
-
-    return pconn->nTuples;
+    return result;
 }
 
 
@@ -597,22 +597,22 @@ GetRowCount(const Ns_DbHandle *handle)
 static Ns_ReturnCode
 Flush(const Ns_DbHandle *handle)
 {
-    Connection *pconn;
+    Ns_ReturnCode status = NS_OK;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");
-        return NS_ERROR;
+        status = NS_ERROR;
+
+    } else {
+        Connection *pconn = handle->connection;
+
+        if (pconn->nCols > 0) {
+            PQclear(pconn->res);
+            pconn->res = NULL;
+            pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
+        }
     }
-
-    pconn = handle->connection;
-
-    if (pconn->nCols > 0) {
-        PQclear(pconn->res);
-        pconn->res = NULL;
-        pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
-    }
-
-    return NS_OK;
+    return status;
 }
 
 
@@ -635,24 +635,25 @@ Flush(const Ns_DbHandle *handle)
 static Ns_ReturnCode
 ResetHandle(Ns_DbHandle *handle)
 {
-    const Connection *pconn;
+    Ns_ReturnCode status = NS_OK;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");
-        return NS_ERROR;
-    }
+        status = NS_ERROR;
 
-    pconn = handle->connection;
+    } else {
+        const Connection *pconn = handle->connection;
 
-    if (pconn->in_transaction == NS_TRUE) {
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
-        if (Ns_DbExec(handle, "rollback") != (int)PGRES_COMMAND_OK) {
-            Ns_Log(Error, "nsdbpg: Rollback failed.");
+        if (pconn->in_transaction == NS_TRUE) {
+            Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
+            if (Ns_DbExec(handle, "rollback") != (int)PGRES_COMMAND_OK) {
+                Ns_Log(Error, "nsdbpg: Rollback failed.");
+            }
+            status = NS_ERROR;
         }
-        return NS_ERROR;
     }
 
-    return NS_OK;
+    return status;
 }
 
 
