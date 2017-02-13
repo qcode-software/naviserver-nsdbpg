@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.15-1+deb8u1) jessie; urgency=medium
+
+  * Import from upstream at 4.99.15
+
+ --  Qcode Software Ltd <hackers@qcode.co.uk>  Mon, 13 Feb 2017 17:23:49 +0000
+
 naviserver-nsdbpg (4.99.12-1+deb8u1) jessie; urgency=medium
 
   * Version numbering change
