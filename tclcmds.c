@@ -530,8 +530,8 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
      */
 
     if (Ns_DbDriverName(handle) != pgDbName) {
-        Tcl_AppendResult(interp, "handle \"", argv[1], "\" is not of type \"",
-                         pgDbName, "\"", NULL);
+        Ns_TclPrintfResult(interp, "handle \"%s\" is not of type \"%s\"",
+                           Tcl_GetString(argv[1]), pgDbName);
         return TCL_ERROR;
     }
 
@@ -541,7 +541,7 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
 	const char *setId = Tcl_GetString(argv[4]);
         set = Ns_TclGetSet(interp, setId);
         if (set == NULL) {
-            Tcl_AppendResult (interp, "invalid set id `", setId, "'", NULL);
+            Ns_TclPrintfResult(interp, "invalid set id '%s'", setId);
             return TCL_ERROR;
         }
         sqlObj = argv[5];
@@ -601,8 +601,8 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
                     value = Ns_SetGet(set, var_p->chars);
                 }
                 if (value == NULL) {
-                    Tcl_AppendResult (interp, "undefined variable `", var_p->chars,
-                                      "'", NULL);
+                    Ns_TclPrintfResult(interp, "undefined variable '%s'",
+                                       var_p->chars);
                     if (dsPtr != NULL) { Ns_DStringFree(dsPtr); }
                     return TCL_ERROR;
                 }
@@ -762,32 +762,34 @@ DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, const char *sql
 {
     const Connection *pconn;
     const char       *pqerror;
+    Tcl_DString       ds;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
     NS_NONNULL_ASSERT(cmd != NULL);
     NS_NONNULL_ASSERT(sql != NULL);
 
+    Tcl_DStringInit(&ds);
     pconn = handle->connection;
-    
-    Tcl_AppendResult(interp, "Database operation \"", cmd, "\" failed", NULL);
+
+    Ns_DStringPrintf(&ds, "Database operation \"%s\" failed", cmd);
     if (handle->cExceptionCode[0] != '\0') {
-        Tcl_AppendResult(interp, " (exception ", handle->cExceptionCode,
-                         NULL);
+        Ns_DStringPrintf(&ds, " (exception %s", handle->cExceptionCode);
         if (handle->dsExceptionMsg.length > 0) {
-            Tcl_AppendResult(interp, ", \"", handle->dsExceptionMsg.string,
-                             "\"", NULL);
+            Ns_DStringPrintf(&ds, ", \"%s\"", handle->dsExceptionMsg.string);
         }
-        Tcl_AppendResult(interp, ")", NULL);
+        Ns_DStringPrintf(&ds, ")");
     }
 
     pqerror = PQerrorMessage(pconn->pgconn);
     if (pqerror[0] != '\0') {
-        Tcl_AppendResult(interp, "\n\n", pqerror, NULL);
+        Ns_DStringPrintf(&ds, "\n\n%s", pqerror);
     } else {
-        Tcl_AppendResult(interp, "\n", NULL);
+        Ns_DStringPrintf(&ds, "\n");
     }
-    Tcl_AppendResult(interp, "\nSQL: ", sql, NULL);
+    Ns_DStringPrintf(&ds, "\nSQL: %s", sql);
+
+    Tcl_DStringResult(interp, &ds);
 
     return TCL_ERROR;
 }
@@ -811,11 +813,8 @@ DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, const char *sql
 static int
 BadArgs(Tcl_Interp *interp, Tcl_Obj *CONST argv[], const char *args)
 {
-    Tcl_AppendResult(interp, "wrong # args: should be \"",
-		     Tcl_GetString(argv[0]), " ", Tcl_GetString(argv[1]), NULL);
-    Tcl_AppendResult(interp, " ", args, NULL);
-    Tcl_AppendResult(interp, "\"", NULL);
-
+    Ns_TclPrintfResult(interp, "wrong # args: should be \"%s %s %s\"",
+                       Tcl_GetString(argv[0]), Tcl_GetString(argv[1]), args);
     return TCL_ERROR;
 }
 
@@ -959,7 +958,7 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
 {
     const Connection *pconn;
     char             *segment_pos;
-    int               segment = 1;
+    int               segment = 1, result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
@@ -978,8 +977,9 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
         buf[0] = UCHAR('\0');
 	sprintf(segment_pos, "%d", segment);
 	if (Ns_DbExec(handle, query) != NS_ROWS) {
-	    Tcl_AppendResult(interp, "Error selecting data from BLOB", NULL);
-	    return TCL_ERROR;
+	    Ns_TclPrintfResult(interp, "Error selecting data from BLOB");
+	    result = TCL_ERROR;
+            break;
 	}
 
 	if (PQntuples(pconn->res) == 0) {
@@ -1005,7 +1005,7 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
 	segment++;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1021,6 +1021,7 @@ blob_get(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id)
     NS_NONNULL_ASSERT(lob_id != NULL);
 
     pconn = handle->connection;
+    query[0] = '\0';
     strcpy(query, "SELECT BYTE_LEN, DATA FROM LOB_DATA WHERE LOB_ID = ");
     strcat(query, lob_id);
     strcat(query, " AND SEGMENT = ");
@@ -1053,7 +1054,6 @@ blob_send_to_stream(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id,
 {
     Connection  *pconn;
     Ns_Conn     *conn = NULL;
-    char         query[100];
     int          fd = -1, result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
@@ -1065,38 +1065,43 @@ blob_send_to_stream(Tcl_Interp *interp, Ns_DbHandle *handle, const char *lob_id,
         conn = Ns_TclGetConn(interp);
 
         if (conn == NULL) {
-            /* this Shouldn't Happen, but spew an error just in case */
-            Ns_Log (Error, "blob_send_to_stream: No connection available");
-            Tcl_AppendResult (interp, "No connection available", NULL);
-            goto bailout;
+            /* 
+             * This shouldn't happen, but spew an error just in case 
+             */
+            Ns_Log(Error, "blob_send_to_stream: No connection available");
+            Ns_TclPrintfResult(interp, "No connection available");
+            result = TCL_ERROR;
         }
 
     } else {
         if (filename == NULL) {
-            Tcl_AppendResult (interp, "could not create temporary file to spool "
-                              "BLOB/CLOB result", NULL);
-            return TCL_ERROR;
-        }
+            Ns_TclPrintfResult(interp, "could not create temporary file to spool "
+                              "BLOB/CLOB result");
+            result = TCL_ERROR;
+        } else {
+            fd = ns_open(filename, O_CREAT | O_TRUNC | O_WRONLY, 0600);
 
-        fd = ns_open(filename, O_CREAT | O_TRUNC | O_WRONLY, 0600);
-
-        if (fd < 0) {
-            Ns_Log (Error, "Can't open %s for writing. error %d(%s)",
-                    filename, errno, strerror(errno));
-            Tcl_AppendResult (interp, "can't open file ", filename,
-                              " for writing. ",
-                              "received error ", strerror(errno), NULL);
-            return TCL_ERROR;
+            if (fd < 0) {
+                Ns_Log(Error, "Can't open %s for writing. error %d(%s)",
+                       filename, errno, strerror(errno));
+                Ns_TclPrintfResult(interp, "can't open file '%s' for writing. "
+                                   "received error: %s",
+                                   filename, strerror(errno));
+                result = TCL_ERROR;
+            }
         }
     }
+    if (result == TCL_OK) {
+        char         query[100];
 
-    strcpy(query, "SELECT BYTE_LEN, DATA FROM LOB_DATA WHERE LOB_ID = ");
-    strcat(query, lob_id);
-    strcat(query, " AND SEGMENT = ");
+        query[0] = '\0';
+        strcpy(query, "SELECT BYTE_LEN, DATA FROM LOB_DATA WHERE LOB_ID = ");
+        strcat(query, lob_id);
+        strcat(query, " AND SEGMENT = ");
 
-    result = get_blob_tuples(interp, handle, query, conn, fd); 
+        result = get_blob_tuples(interp, handle, query, conn, fd);
+    }
 
- bailout:
     if (!to_conn_p) {
         (void) ns_close(fd);
     }
@@ -1143,7 +1148,7 @@ write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, bool to_
 static int
 blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *valueObj)
 {
-    int                  i, j, segment, value_len;
+    int                  segment, value_len, result = TCL_OK;
     unsigned char        out_buf[8001];
     const unsigned char *value_ptr;
     char                 query[10000], *segment_pos;
@@ -1155,6 +1160,7 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *
 
     value_ptr = Tcl_GetByteArrayFromObj(valueObj, &value_len);
 
+    query[0] = '\0';
     strcpy(query, "INSERT INTO LOB_DATA VALUES(");
     strcat(query, blob_id);
     strcat(query, ",");
@@ -1162,7 +1168,7 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *
     segment = 1;
     
     while (value_len > 0) {
-        int segment_len = value_len > 6000 ? 6000 : value_len;
+        int i, j, segment_len = value_len > 6000 ? 6000 : value_len;
         
         value_len -= segment_len;
         for (i = 0, j = 0; i < segment_len; i += 3, j+=4) {
@@ -1172,14 +1178,16 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *
         
         sprintf(segment_pos, "%d, %d, '%s')", segment, segment_len, out_buf);
         if (Ns_DbExec(handle, query) != NS_DML) {
-            Tcl_AppendResult(interp, "Error inserting data into BLOB", NULL);
-            return TCL_ERROR;
+            Ns_TclPrintfResult(interp, "Error inserting data into BLOB");
+            result = TCL_ERROR;
+            break;
+        } else {
+            value_ptr += segment_len;
+            segment++;
         }
-        value_ptr += segment_len;
-        segment++;
     }
 
-    return TCL_OK;
+    return result;
 }
 
 /* ns_pg blob_dml_file blob_id file_name
@@ -1189,10 +1197,7 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *
 static int
 blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, const char *filename)
 {
-    int           fd, i, j, segment, readlen;
-    char          query[10000];
-    unsigned char in_buf[6000], out_buf[8001];
-    char         *segment_pos;
+    int fd, result = TCL_OK;
 
     NS_NONNULL_ASSERT(interp != NULL);
     NS_NONNULL_ASSERT(handle != NULL);
@@ -1202,37 +1207,47 @@ blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, cons
     fd = ns_open(filename, O_RDONLY, 0);
 
     if (fd == NS_INVALID_FD) {
-        Ns_Log (Error, " Error opening file %s: %d(%s)",
+        Ns_Log(Error, " Error opening file %s: %d(%s)",
                 filename, errno, strerror(errno));
-        Tcl_AppendResult (interp, "can't open file ", filename,
-                          " for reading. ", "received error ",
-                          strerror(errno), NULL);
-    }
+        Ns_TclPrintfResult(interp, "can't open file '%s'for reading. "
+                           "received error: %s ",
+                           filename, strerror(errno));
+        result = TCL_ERROR;
+    } else {
+        int           segment, readlen;
+        char         *segment_pos;
+        unsigned char in_buf[6000], out_buf[8001];
+        char          query[10000];
 
-    strcpy(query, "INSERT INTO LOB_DATA VALUES(");
-    strcat(query, blob_id);
-    strcat(query, ",");
-    segment_pos = query + strlen(query);
-    segment = 1;
-
-    readlen = ns_read(fd, in_buf, 6000u);
-    while (readlen > 0) {
-        for (i = 0, j = 0; i < readlen; i += 3, j+=4) {
-	    encode3(&in_buf[i], &out_buf[j]);
-        }
-        out_buf[j] = UCHAR('\0');
-        sprintf(segment_pos, "%d, %d, '%s')", segment, readlen, out_buf);
-        if (Ns_DbExec(handle, query) != NS_DML) {
-            Tcl_AppendResult(interp, "Error inserting data into BLOB", NULL);
-            (void) ns_close(fd);
-            return TCL_ERROR;
-        }
+        query[0] = '\0';
+        strcpy(query, "INSERT INTO LOB_DATA VALUES(");
+        strcat(query, blob_id);
+        strcat(query, ",");
+        segment_pos = query + strlen(query);
+        segment = 1;
+        
         readlen = ns_read(fd, in_buf, 6000u);
-        segment++;
+        while (readlen > 0) {
+            int i, j;
+            
+            for (i = 0, j = 0; i < readlen; i += 3, j+=4) {
+                encode3(&in_buf[i], &out_buf[j]);
+            }
+            out_buf[j] = UCHAR('\0');
+            sprintf(segment_pos, "%d, %d, '%s')", segment, readlen, out_buf);
+            if (Ns_DbExec(handle, query) != NS_DML) {
+                Ns_TclPrintfResult(interp, "Error inserting data into BLOB");
+                result = TCL_ERROR;
+                break;
+            } else {
+                readlen = ns_read(fd, in_buf, 6000u);
+                segment++;
+            }
+        }
+        (void) ns_close(fd);
     }
-    (void) ns_close(fd);
 
-    return TCL_OK;
+    return result;
 }
 
 
@@ -1371,9 +1386,9 @@ static unsigned char
 get_one(unsigned char c)
 {
     if (c == UCHAR('a')) {
-	return UCHAR('\'');
+	c = UCHAR('\'');
     } else if (c == UCHAR('b')) {
-	return UCHAR('\\');
+	c = UCHAR('\\');
     }
     return c;
 }
