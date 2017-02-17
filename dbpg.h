@@ -58,7 +58,7 @@ typedef struct Connection {
 } Connection;
 
 extern const char *pgDbName;
-extern int Ns_PgServerInit(const char *server, char *module, char *driver);
+extern int Ns_PgServerInit(const char *server, const char *module, const char *driver);
 
 
 #endif /* DBPG_H */

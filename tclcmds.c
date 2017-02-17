@@ -96,7 +96,7 @@ static unsigned char get_one(unsigned char c);
 static void encode3(const unsigned char *p, unsigned char *buf)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
-static void decode3(const unsigned char *p, unsigned char *buf, int n)
+static void decode3(const unsigned char *p, unsigned char *buf, long n)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2);
 
 static int get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *conn, int fd) 
@@ -124,7 +124,7 @@ static int get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query,
  */
 
 Ns_ReturnCode
-Ns_PgServerInit(const char *server, char *module, char *driver)
+Ns_PgServerInit(const char *server, const char *module, const char *driver)
 {
     static bool   initialized = NS_FALSE;
     Ns_ReturnCode status;
@@ -643,13 +643,13 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
                     for (p = value; *p != '\0'; p++) {
                         if (unlikely(*p == '\'')) {
                             if (likely(p > value)) {
-                                Ns_DStringNAppend(dsPtr, value, p - value);
+                                Ns_DStringNAppend(dsPtr, value, (int)(p - value));
                             }
                             value = p;
                             Ns_DStringNAppend(dsPtr, "'", 1);
                         } else if (unlikely(*p == '\\')) {
                             if (likely(p > value)) {
-                                Ns_DStringNAppend(dsPtr, value, p - value);
+                                Ns_DStringNAppend(dsPtr, value, (int)(p - value));
                             }
                             value = p;
                             Ns_DStringNAppend(dsPtr, "\\", 1);
@@ -657,7 +657,7 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Ob
                     }
 
                     if (likely(p > value)) {
-			Ns_DStringNAppend(dsPtr, value, p - value);
+			Ns_DStringNAppend(dsPtr, value, (int)(p - value));
                     }
 
                     Ns_DStringNAppend(dsPtr, "'", 1);
@@ -970,7 +970,8 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
     for (;;) {
 	const unsigned char *data_column;
         const unsigned char *raw_data;
-	int                  i, j, n, byte_len;
+	int                  i, j;
+        long                 byte_len, n;
         size_t               obtained_length;
 	unsigned char        buf[6001];
 
@@ -1000,7 +1001,7 @@ get_blob_tuples(Tcl_Interp *interp, Ns_DbHandle *handle, char *query, Ns_Conn  *
 	if (fd != NS_INVALID_FD || conn != NULL) {
 	    (void) write_to_stream(fd, conn, buf, (size_t)byte_len, (conn != NULL) ? NS_TRUE : NS_FALSE);
 	} else {
-            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)buf, byte_len));
+            Tcl_SetObjResult(interp, Tcl_NewByteArrayObj((const unsigned char *)buf, (int)byte_len));
 	}
 	segment++;
     }
@@ -1214,7 +1215,8 @@ blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, cons
                            filename, strerror(errno));
         result = TCL_ERROR;
     } else {
-        int           segment, readlen;
+        int           segment;
+        ssize_t       readlen;
         char         *segment_pos;
         unsigned char in_buf[6000], out_buf[8001];
         char          query[10000];
@@ -1234,7 +1236,7 @@ blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, cons
                 encode3(&in_buf[i], &out_buf[j]);
             }
             out_buf[j] = UCHAR('\0');
-            sprintf(segment_pos, "%d, %d, '%s')", segment, readlen, out_buf);
+            sprintf(segment_pos, "%d, %" PRIdz ", '%s')", segment, readlen, out_buf);
             if (Ns_DbExec(handle, query) != NS_DML) {
                 Ns_TclPrintfResult(interp, "Error inserting data into BLOB");
                 result = TCL_ERROR;
@@ -1394,7 +1396,7 @@ get_one(unsigned char c)
 }
 
 static void
-decode3(const unsigned char *p, unsigned char *buf, int n)
+decode3(const unsigned char *p, unsigned char *buf, long n)
 {
     unsigned char c1, c2, c3, c4;
 
