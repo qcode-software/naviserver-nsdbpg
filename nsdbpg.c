@@ -55,6 +55,7 @@ static Ns_ReturnCode ResetHandle(Ns_DbHandle *handle);
 
 static void SetTransactionState(const Ns_DbHandle *handle, const char *sql);
 
+NS_EXPORT NsDb_DriverInitProc Ns_DbDriverInit;
 
 /*
  * Local variables defined in this file.
@@ -99,18 +100,17 @@ static unsigned int id = 0u;     /* Global count of connections. */
 NS_EXPORT Ns_ReturnCode
 Ns_DbDriverInit(const char *driver, const char *configPath)
 {
-    Ns_ReturnCode status = NS_OK;
+    Ns_ReturnCode status;
 
-    if (Ns_DbRegisterDriver(driver, &procs[0]) == NS_OK) {
-        status = NS_ERROR;
-        
-    } else {
+    status = Ns_DbRegisterDriver(driver, &procs[0]);
+    if (status == NS_OK) {
         const char *style = Ns_ConfigGetValue(configPath, "datestyle");
-        
+
         if (style != NULL) {
             if (STRIEQ(style, "ISO") || STRIEQ(style, "SQL")
                 || STRIEQ(style, "POSTGRES") || STRIEQ(style, "GERMAN")
-                || STRIEQ(style, "NONEURO") || STRIEQ(style, "EURO")) {
+                || STRIEQ(style, "NONEURO") || STRIEQ(style, "EURO")
+                ) {
                 Ns_DString  ds;
 
                 Ns_DStringInit(&ds);
@@ -127,12 +127,17 @@ Ns_DbDriverInit(const char *driver, const char *configPath)
             }
         }
 
+#if defined(PG_VERSION_NUM) && PG_VERSION_NUM > 90100
         /*
-         * PQlibVersion() was introduced in pg 9.1, so wait until we can rely on it...
-         * Ns_Log(Notice, "nsdbpg: version %s loaded, based on %s", NSDBPG_VERSION, ...);
+         * PQlibVersion() was introduced in PostgreSQL 9.1
          */
-        Ns_Log(Notice, "nsdbpg: version %s loaded", NSDBPG_VERSION);
+        Ns_Log(Notice, "nsdbpg: version %s loaded, based on PostgreSQL %s and libbpq %d",
+               NSDBPG_VERSION, PG_VERSION, PQlibVersion());
+#else
+        Ns_Log(Notice, "nsdbpg: version %s loaded based on PostgreSQL %s", NSDBPG_VERSION, PG_VERSION);
+#endif
     }
+
     return status;
 }
 
@@ -180,61 +185,63 @@ DbType(Ns_DbHandle *UNUSED(handle))
 static Ns_ReturnCode
 OpenDb(Ns_DbHandle *handle)
 {
-    Connection   *pconn;
-    PGconn       *pgconn;
-    Ns_DString    ds;
-    char         *host, *port, *db = NULL;
     Ns_ReturnCode status = NS_OK;
 
     if (handle == NULL || handle->datasource == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid handle.");
-        return NS_ERROR;
-    }
-
-    Ns_DStringInit(&ds);
-    Ns_DStringAppend(&ds, handle->datasource);
-    host = ds.string;
-    port = strchr(host, INTCHAR(':'));
-    if (port != NULL) {
-        db = strchr(port + 1, INTCHAR(':'));
-    }
-    if (db == NULL) {
-        Ns_Log(Error, "nsdbpg(%s):  Malformed datasource: \" %s\". "
-               "Should be host:port:database.",
-               handle->driver, handle->datasource);
         status = NS_ERROR;
 
     } else {
-        *port++ = '\0';
-        *db++ = '\0';
-        if (STREQ(host, "localhost")) {
-            Ns_Log(Notice, "nsdbpg: Opening %s on %s", db, host);
-            pgconn = PQsetdbLogin(NULL, port, NULL, NULL, db, handle->user,
-                                  handle->password);
-        } else {
-            Ns_Log(Notice, "nsdbpg: Opening %s on %s, port %s", db, host, port);
-            pgconn = PQsetdbLogin(host, port, NULL, NULL, db, handle->user,
-                                  handle->password);
-        }
-        if (PQstatus(pgconn) != CONNECTION_OK) {
-            Ns_Log(Error, "nsdbpg(%s):  Could not connect to %s: %s",
-                   handle->driver, handle->datasource, PQerrorMessage(pgconn));
-            PQfinish(pgconn);
-            status = NS_ERROR;
-        } else {
-            Ns_Log(Notice, "nsdbpg(%s):  Opened connection to %s.",
-                   handle->driver, handle->datasource);
+        Connection   *pconn;
+        PGconn       *pgconn;
+        Ns_DString    ds;
+        char         *host, *portStart = NULL, *db = NULL;
 
-            pconn = ns_malloc(sizeof(Connection));
-            pconn->pgconn = pgconn;
-            pconn->res = NULL;
-            pconn->id = id++;
-            pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
-            pconn->in_transaction = NS_FALSE;
-            handle->connection = pconn;
-        
-            if (dateStyle != NULL && Ns_DbExec(handle, dateStyle) != NS_DML) {
+        Ns_DStringInit(&ds);
+        Ns_DStringAppend(&ds, handle->datasource);
+
+        Ns_HttpParseHost(ds.string, &host, &portStart);
+        if (portStart != NULL) {
+            db = strchr(portStart + 1, INTCHAR(':'));
+        }
+
+        if (db == NULL) {
+            Ns_Log(Error, "nsdbpg(%s):  Malformed datasource: \" %s\". "
+                   "Should be host:port:database.",
+                   handle->driver, handle->datasource);
+            status = NS_ERROR;
+
+        } else {
+            *portStart++ = '\0';
+            *db++ = '\0';
+            Ns_Log(Notice, "nsdbpg: Opening %s on %s, port %s", db, host, portStart);
+            if (STREQ(host, "localhost")) {
+                pgconn = PQsetdbLogin(NULL, portStart, NULL, NULL, db, handle->user,
+                                      handle->password);
+            } else {
+                pgconn = PQsetdbLogin(host, portStart, NULL, NULL, db, handle->user,
+                                      handle->password);
+            }
+            if (PQstatus(pgconn) != CONNECTION_OK) {
+                Ns_Log(Error, "nsdbpg(%s):  Could not connect to %s: %s",
+                       handle->driver, handle->datasource, PQerrorMessage(pgconn));
+                PQfinish(pgconn);
                 status = NS_ERROR;
+            } else {
+                Ns_Log(Notice, "nsdbpg(%s):  Opened connection to %s.",
+                       handle->driver, handle->datasource);
+
+                pconn = ns_malloc(sizeof(Connection));
+                pconn->pgconn = pgconn;
+                pconn->res = NULL;
+                pconn->id = id++;
+                pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
+                pconn->in_transaction = NS_FALSE;
+                handle->connection = pconn;
+
+                if (dateStyle != NULL && Ns_DbExec(handle, dateStyle) != NS_DML) {
+                    status = NS_ERROR;
+                }
             }
         }
     }
@@ -265,13 +272,13 @@ CloseDb(Ns_DbHandle *handle) {
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");
         status = NS_ERROR;
-        
+
     } else {
         Connection *pconn = handle->connection;
 
         Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s):  Closing connection: %u",
                handle->poolname, pconn->id);
-        
+
         PQfinish(pconn->pgconn);
         ns_free(pconn);
         handle->connection = NULL;
@@ -304,16 +311,16 @@ BindRow(Ns_DbHandle *handle)
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid connection.");
 
-    } else if (handle->fetchingRows == 0) {
+    } else if (!handle->fetchingRows) {
         Ns_Log(Error, "nsdbpg(%s): No rows waiting to bind.", handle->datasource);
 
     } else {
         Connection *pconn = handle->connection;
-            
+
         row = handle->row;
         if (PQresultStatus(pconn->res) == PGRES_TUPLES_OK) {
             int i;
-            
+
             pconn->curTuple = 0;
             pconn->nCols = PQnfields(pconn->res);
             pconn->nTuples = PQntuples(pconn->res);
@@ -382,20 +389,20 @@ Exec(Ns_DbHandle *handle, const char *sql)
     /* Set error result for exception message -- not sure that this
        belongs here in DRB-improved driver..... but, here it is
        anyway, as it can't really hurt anything :-) */
-   
+
     if (PQresultStatus(pconn->res) == PGRES_BAD_RESPONSE) {
         Ns_DStringAppend(&handle->dsExceptionMsg, "PGRES_BAD_RESPONSE ");
     }
     Ns_DStringAppend(&handle->dsExceptionMsg,
                      PQresultErrorMessage(pconn->res));
 
-    /* This loop should actually be safe enough, but we'll take no 
+    /* This loop should actually be safe enough, but we'll take no
      * chances and guard against infinite retries with a counter.
      */
 
     while (PQstatus(pconn->pgconn) == CONNECTION_BAD && retry_count-- > 0) {
 
-        int in_transaction = pconn->in_transaction;
+        bool in_transaction = pconn->in_transaction;
 
         /* Backend returns a fatal error if it really crashed.  After a crash,
          * all other backends close with a non-fatal error because shared
@@ -405,7 +412,7 @@ Exec(Ns_DbHandle *handle, const char *sql)
 
         int retry_query = PQresultStatus(pconn->res) == PGRES_NONFATAL_ERROR;
 
-        /* Reconnect messages need to be logged regardless of Verbose. */    
+        /* Reconnect messages need to be logged regardless of handle->verbose. */
 
         Ns_Log(Notice, "nsdbpg: Trying to reopen database connection");
 
@@ -421,15 +428,15 @@ Exec(Ns_DbHandle *handle, const char *sql)
          * inserts or whatever.  Not good!   So we return an error.  If
          * the programmer's catching transaction errors and rolling back
          * properly, there will be no problem - the rollback will be
-         * flagged as occuring outside a transaction but there's no
+         * flagged as occurring outside a transaction but there's no
          * harm in that.
          *
          * If the programmer's started a transaction with no "catch",
          * you'll find no sympathy on my part.
          */
 
-        if (OpenDb(handle) == NS_ERROR || in_transaction == 1 || retry_query == 0) {
-            if (in_transaction == NS_TRUE) {
+        if (OpenDb(handle) == NS_ERROR || in_transaction || retry_query == 0) {
+            if (in_transaction) {
                 Ns_Log(Notice, "nsdbpg: In transaction, conn died, error returned");
             }
             Ns_DStringFree(&dsSql);
@@ -442,7 +449,7 @@ Exec(Ns_DbHandle *handle, const char *sql)
         PQclear(pconn->res);
         pconn->res = PQexec(pconn->pgconn, dsSql.string);
 
-        /* This may again break the connection for two reasons: 
+        /* This may again break the connection for two reasons:
          * our query may be a back-end crashing query or another
          * backend may've crashed after we reopened the backend.
          * Neither's at all likely but we'll loop back and try
@@ -477,10 +484,18 @@ Exec(Ns_DbHandle *handle, const char *sql)
         break;
     case PGRES_COMMAND_OK:
         SetTransactionState(handle, sql);
-        pconn->nTuples = strtol(PQcmdTuples(pconn->res), NULL, 10);
+        pconn->nTuples = (int)strtol(PQcmdTuples(pconn->res), NULL, 10);
         /*pconn->nTuples = PQntuples(pconn->res);*/
         result = NS_DML;
         break;
+    case PGRES_BAD_RESPONSE:   /* fall through */
+    case PGRES_FATAL_ERROR:    /* fall through */
+    case PGRES_NONFATAL_ERROR: /* fall through */
+    case PGRES_EMPTY_QUERY:    /* fall through */
+#if defined(PG_VERSION_NUM) && PG_VERSION_NUM > 90100
+    case PGRES_COPY_BOTH:      /* fall through */
+    case PGRES_SINGLE_TUPLE:   /* fall through */
+#endif
     default:
         Ns_Log(Error, "nsdbpg: result status: %d message: %s",
                PQresultStatus(pconn->res), PQerrorMessage(pconn->pgconn));
@@ -504,7 +519,7 @@ Exec(Ns_DbHandle *handle, const char *sql)
  *      NS_OK, NS_END_DATA or NS_ERROR.
  *
  * Side effects:
- *      Current tupple updated.
+ *      Current tuple updated.
  *
  *----------------------------------------------------------------------
  */
@@ -512,38 +527,40 @@ Exec(Ns_DbHandle *handle, const char *sql)
 static int
 GetRow(const Ns_DbHandle *handle, const Ns_Set *row)
 {
-    Connection  *pconn;
-    size_t       i;
+    int          result = NS_OK;
 
     if (handle == NULL || handle->connection == NULL) {
         Ns_Log(Error, "nsdbpg: No connection.");
-        return NS_ERROR;
-    } 
+        result = NS_ERROR;
 
-    if (row == NULL) {
+    } else if (row == NULL) {
         Ns_Log(Error, "nsdbpg: Invalid Ns_Set -> row.");
-        return NS_ERROR;
-    }
+        result = NS_ERROR;
 
-    pconn = handle->connection;
+    } else {
+        Connection *pconn = handle->connection;
 
-    if (pconn->nCols == 0) {
-        Ns_Log(Error, "nsdbpg(%s):  GetRow called outside a fetch row loop.",
-               handle->datasource);
-        return NS_ERROR;
-    }
-    if (pconn->curTuple == pconn->nTuples) {
-        PQclear(pconn->res);
-        pconn->res = NULL;
-        pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
-        return NS_END_DATA;
-    }
-    for (i = 0u; i < (size_t)pconn->nCols; i++) {
-        Ns_SetPutValue(row, i, PQgetvalue(pconn->res, pconn->curTuple, (int)i));
-    }
-    pconn->curTuple++;
+        if (pconn->nCols == 0) {
+            Ns_Log(Error, "nsdbpg(%s):  GetRow called outside a fetch row loop.",
+                   handle->datasource);
+            result = NS_ERROR;
 
-    return NS_OK;
+        } else if (pconn->curTuple == pconn->nTuples) {
+            PQclear(pconn->res);
+            pconn->res = NULL;
+            pconn->nCols = pconn->nTuples = pconn->curTuple = 0;
+            result = NS_END_DATA;
+
+        } else {
+            size_t i;
+
+            for (i = 0u; i < (size_t)pconn->nCols; i++) {
+                Ns_SetPutValue(row, i, PQgetvalue(pconn->res, pconn->curTuple, (int)i));
+            }
+            pconn->curTuple++;
+        }
+    }
+    return result;
 }
 
 /*
@@ -644,8 +661,10 @@ ResetHandle(Ns_DbHandle *handle)
     } else {
         const Connection *pconn = handle->connection;
 
-        if (pconn->in_transaction == NS_TRUE) {
-            Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
+        if (pconn->in_transaction) {
+            if (handle->verbose) {
+                Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
+            }
             if (Ns_DbExec(handle, "rollback") != (int)PGRES_COMMAND_OK) {
                 Ns_Log(Error, "nsdbpg: Rollback failed.");
             }
@@ -685,17 +704,22 @@ SetTransactionState(const Ns_DbHandle *handle, const char *sql)
     }
     if (strncasecmp(sql, "begin", 5u) == 0) {
         pconn->in_transaction = NS_TRUE;
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Entering transaction.", handle->poolname);
-
+        if (handle->verbose) {
+            Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Entering transaction.", handle->poolname);
+        }
     } else if (strncasecmp(sql, "end", 3u) == 0
                || strncasecmp(sql, "commit", 6u) == 0) {
         pconn->in_transaction = NS_FALSE;
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Committing transaction.", handle->poolname);
+        if (handle->verbose) {
+            Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Committing transaction.", handle->poolname);
+        }
 
     } else if (strncasecmp(sql, "abort", 5u) == 0
                || strncasecmp(sql, "rollback", 8u) == 0) {
         pconn->in_transaction = NS_FALSE;
-        Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
+        if (handle->verbose) {
+            Ns_Log(Ns_LogSqlDebug, "nsdbpg(%s): Rolling back transaction.", handle->poolname);
+        }
     }
 }
 
@@ -707,4 +731,3 @@ SetTransactionState(const Ns_DbHandle *handle, const char *sql)
  * indent-tabs-mode: nil
  * End:
  */
-

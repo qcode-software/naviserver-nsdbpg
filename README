@@ -55,6 +55,40 @@ Contributors to this file include:
 Original example driver by Jim Davidson
 
 
+SAMPLE CONFIGURATION:
+
+Use something like the following snippet in the configuration of
+NaviServer. We assume here that the Tcl variables db_host, db_port,
+db_name and db_user as set accordingly.
+
+===========================================================
+   ns_section ns/db/pools {
+       ns_param   pool1              "Pool 1"
+   }
+   ns_section ns/db/pool/pool1 {
+       # ns_param	maxidle            0
+       # ns_param	maxopen            0
+       ns_param	  connections        15
+       ns_param   LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
+       ns_param	  logsqlerrors       true
+       ns_param	  driver             postgres
+       ns_param	  datasource         "${db_host}:${db_port}:dbname=${db_name}"
+       ns_param	  user               $db_user
+       ns_param	  password           ""
+    }
+===========================================================
+
+If the database is reachable just via SSL, the appropriate
+PostgreSQL "conninfo" parameters can be added to the datasource.
+
+===========================================================
+    ...
+       ns_param	  datasource         "${db_host}:${db_port}:dbname=${db_name} sslmode=require"
+    ...
+===========================================================
+
+
+
 DEVELOPER'S GUIDE:
 
 Run 'make help' for developer information.
@@ -65,13 +99,20 @@ The build step needs from PostgreSQL
 
 Examples for a build operation:
 
-    export PG=/usr/local/pg945
+    export PG=/usr/local/pg965
     make PGLIB=$PG/lib PGINCLUDE=$PG/include
 
+    make PGINCLUDE=/usr/include/postgresql
+
+To build/install on a non-standard path, use e.g.:
+    export PG=/usr/local/pg965
+    make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/
+    make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/ install
+
 Under MacPorts, you might use something like:
-    make PGLIB=/opt/local/lib/postgresql95/ PGINCLUDE=/opt/local/include/postgresql95/
+    make PGLIB=/opt/local/lib/postgresql10/ PGINCLUDE=/opt/local/include/postgresql10/
 
 For extended code checking via cppchek, one might use e.g.
-    make PGLIB=/opt/local/lib/postgresql95/ PGINCLUDE=/opt/local/include/postgresql95/ cppcheck
+    make PGLIB=/opt/local/lib/postgresql10/ PGINCLUDE=/opt/local/include/postgresql10/ cppcheck
 
 See the Makefile for further information on building this module.

@@ -90,7 +90,7 @@
 2014-11-14 14:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a1e348a66f8c)
         * tclcmds.c:
         - add "default" labels to switch statements
-        - add editor hints to to keep formatting conventions, prefer spaces
+        - add editor hints to keep formatting conventions, prefer spaces
         over tabs
 
 2014-11-11 09:24 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6b35e0227efe)
@@ -113,7 +113,7 @@
 
 2014-11-06 16:18 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cab8a8fbf122)
         * tclcmds.c:
-        - avound implicit signed/unsigned converison
+        - avoid implicit signed/unsigned conversion
 
 2014-11-04 08:03 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f789a0dccf70)
         * dbpg.h, nsdbpg.c, tclcmds.c:
