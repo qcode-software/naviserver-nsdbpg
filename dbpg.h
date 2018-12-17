@@ -37,7 +37,19 @@
 #ifndef DBPG_H
 #define DBPG_H
 
-#define NSDBPG_VERSION "2.1"
+#define NSDBPG_VERSION "2.3"
+
+/*
+ * In order to obtain PG_VERSION_NUM and PG_VERSION we load the
+ * pg_config.h. However, the PACKAGE_* macros conflict with
+ * NaviServer's packaging information, so we drop these.
+ */
+#include <pg_config.h>
+#undef PACKAGE_VERSION
+#undef PACKAGE_TARNAME
+#undef PACKAGE_STRING
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
 
 #include <nsdb.h>
 #include <libpq-fe.h>
@@ -58,7 +70,7 @@ typedef struct Connection {
 } Connection;
 
 extern const char *pgDbName;
-extern int Ns_PgServerInit(const char *server, char *module, char *driver);
+extern int Ns_PgServerInit(const char *server, const char *module, const char *driver);
 
 
 #endif /* DBPG_H */
