@@ -9,6 +9,6 @@ Standards-Version: 3.9.8
 
 Package: naviserver-nsdbpg
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, naviserver (>=4.99.11) , naviserver-core (>=4.99.17)
+Depends: ${shlibs:Depends}, ${misc:Depends}, naviserver (>=4.99.17) , naviserver-core (>=4.99.17)
 Description: Naviserver Postgresql drivers
  nsdbpg drivers allowing Naviserver to speak to Postgresql DBs.
