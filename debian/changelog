@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.17-1+deb9u1) stretch; urgency=medium
+
+  * Import 4.99.17 from Upstream
+
+ -- Qcode Software Ltd <hackers@qcode.co.uk>  Mon, 17 Dec 2018 11:40:26 +0000
+
 naviserver-nsdbpg (4.99.12-1+deb7u1) wheezy; urgency=low
 
   * Import 4.99.12 from upstream
