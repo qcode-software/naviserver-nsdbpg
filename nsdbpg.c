@@ -35,7 +35,7 @@
  */
 
 #include "dbpg.h"
-
+NS_EXTERN const int Ns_ModuleVersion;
 NS_EXPORT const int Ns_ModuleVersion = 1;
 const char *pgDbName = "PostgreSQL";
 
@@ -62,18 +62,18 @@ NS_EXPORT NsDb_DriverInitProc Ns_DbDriverInit;
  */
 
 static const Ns_DbProc procs[] = {
-    {DbFn_DbType,       (Ns_Callback *)DbType},
-    {DbFn_Name,         (Ns_Callback *)DbType},
-    {DbFn_OpenDb,       (Ns_Callback *)OpenDb},
-    {DbFn_CloseDb,      (Ns_Callback *)CloseDb},
-    {DbFn_BindRow,      (Ns_Callback *)BindRow},
-    {DbFn_Exec,         (Ns_Callback *)Exec},
-    {DbFn_GetRow,       (Ns_Callback *)GetRow},
-    {DbFn_GetRowCount,  (Ns_Callback *)GetRowCount},
-    {DbFn_Flush,        (Ns_Callback *)Flush},
-    {DbFn_Cancel,       (Ns_Callback *)Flush},
-    {DbFn_ResetHandle,  (Ns_Callback *)ResetHandle},
-    {DbFn_ServerInit,   (Ns_Callback *)Ns_PgServerInit},
+    {DbFn_DbType,       (ns_funcptr_t)DbType},
+    {DbFn_Name,         (ns_funcptr_t)DbType},
+    {DbFn_OpenDb,       (ns_funcptr_t)OpenDb},
+    {DbFn_CloseDb,      (ns_funcptr_t)CloseDb},
+    {DbFn_BindRow,      (ns_funcptr_t)BindRow},
+    {DbFn_Exec,         (ns_funcptr_t)Exec},
+    {DbFn_GetRow,       (ns_funcptr_t)GetRow},
+    {DbFn_GetRowCount,  (ns_funcptr_t)GetRowCount},
+    {DbFn_Flush,        (ns_funcptr_t)Flush},
+    {DbFn_Cancel,       (ns_funcptr_t)Flush},
+    {DbFn_ResetHandle,  (ns_funcptr_t)ResetHandle},
+    {DbFn_ServerInit,   (ns_funcptr_t)Ns_PgServerInit},
     {DbFn_End, NULL}
 };
 
@@ -489,14 +489,13 @@ Exec(Ns_DbHandle *handle, const char *sql)
         result = NS_DML;
         break;
     case PGRES_BAD_RESPONSE:   /* fall through */
-    case PGRES_FATAL_ERROR:    /* fall through */
     case PGRES_NONFATAL_ERROR: /* fall through */
     case PGRES_EMPTY_QUERY:    /* fall through */
 #if defined(PG_VERSION_NUM) && PG_VERSION_NUM > 90100
     case PGRES_COPY_BOTH:      /* fall through */
     case PGRES_SINGLE_TUPLE:   /* fall through */
 #endif
-    default:
+    case PGRES_FATAL_ERROR:
         Ns_Log(Error, "nsdbpg: result status: %d message: %s",
                PQresultStatus(pconn->res), PQerrorMessage(pconn->pgconn));
         Ns_DbSetException(handle,"ERROR", PQerrorMessage(pconn->pgconn));

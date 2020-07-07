@@ -110,9 +110,9 @@ To build/install on a non-standard path, use e.g.:
     make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/ install
 
 Under MacPorts, you might use something like:
-    make PGLIB=/opt/local/lib/postgresql10/ PGINCLUDE=/opt/local/include/postgresql10/
+    PGPATH=postgresql11 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/
 
 For extended code checking via cppchek, one might use e.g.
-    make PGLIB=/opt/local/lib/postgresql10/ PGINCLUDE=/opt/local/include/postgresql10/ cppcheck
+     PGPATH=postgresql11 &&make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/ cppcheck
 
 See the Makefile for further information on building this module.
