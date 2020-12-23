@@ -1,3 +1,263 @@
+2019-04-18 19:23 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (803ce5540d62 [tip])
+
+	* tclcmds.c:
+	support proper loading in multiple servers
+
+2018-10-11 12:13 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (64d62e77b229)
+
+	* README:
+	add sample configuration section, including hints how to use SSL
+	connections to the database
+
+2018-10-11 12:02 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0ed3cdea0445)
+
+	* ChangeLog:
+	Improve spelling
+
+2018-08-15 17:23 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (4af072155475)
+
+	* nsdbpg.c:
+	fix typo
+
+2018-07-10 10:03 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c8b0babef888)
+
+	* nsdbpg.c:
+	log begin/end transaction only, when verbose flag is on. probably,
+	one wants to have more flexibility on turing some verbosity flags on
+	or off.
+
+2018-03-28 10:18 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (4ac61ccfc593)
+
+	* tclcmds.c:
+	fix typo
+
+2018-02-13 21:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3055137d2e96)
+
+	* tclcmds.c:
+	provide compatibbility with Tcl 8.7.2
+
+2018-02-13 21:06 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (47efcda32e3e)
+
+	* nsdbpg.c:
+	don't use "==" operator for boolean values
+
+2017-12-11 12:05 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5a5fa7547f5b)
+
+	* nsdbpg.c:
+	Improve backwards compatibility with ancient versions of PostgreSQL
+
+2017-12-03 11:55 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5fe29dad3b47)
+
+	* nsdbpg.c:
+	Add support for IPv6 addresses in IP-lteral notation use
+	consistently boolean for "fetchingRows"
+
+2017-12-03 11:54 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a999108eccac)
+
+	* README:
+	use pg10 in README example
+
+2017-10-18 11:00 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (85d465cd4525)
+
+	* nsdbpg.c:
+	fix typo in message
+
+2017-10-17 09:49 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8b87c8867206)
+
+	* dbpg.h, nsdbpg.c:
+	Add more detailed version numbers about used versions during built
+	process
+
+2017-10-17 09:47 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a7cc43eebe8b)
+
+	* README:
+	bump advertized pg version number
+
+2017-10-05 15:48 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2f0bea2e246b)
+
+	* tclcmds.c:
+	honor "logsqlerrors" settings from config file
+
+2017-10-05 15:10 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d076e5d4fea1)
+
+	* README:
+	Update README file for convenience
+
+2017-10-05 15:09 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (13ee9a2e9666)
+
+	* tclcmds.c:
+	truncate SQL statement in error.log to 10.000 chars if longer (to
+	avoid overlong log file entries)
+
+2017-08-15 11:32 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (05e5d8cd6bcd)
+
+	* README:
+	Update "recommended" version number to 9.6.4
+
+2017-04-22 20:51 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cdaa477b3ab5)
+
+	* nsdbpg.c, tclcmds.c:
+	fix spelling issues
+
+2017-04-22 14:13 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1b3f0727ec57)
+
+	* nsdbpg.c:
+	Fix spelling errors
+
+2017-04-20 16:40 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (12404bd9a596)
+
+	* dbpg.h, nsdbpg.c, tclcmds.c:
+	- Improve cleanness of compilation
+	- Use NsDb_DriverInitProc as prototype (requires actual version of
+	NaviServer)
+	- Bump version number to 2.2
+
+2016-12-31 13:39 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (df6b0e912bc2)
+
+	* dbpg.h, tclcmds.c:
+	- add const declarations
+
+2016-12-31 10:43 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c61303ced05d)
+
+	* nsdbpg.c:
+	- make response codes explicit
+
+2016-11-05 14:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6d3c289386b6)
+
+	* nsdbpg.c:
+	- use bool datatype
+
+2016-11-05 13:27 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (853a5016d7a9)
+
+	* nsdbpg.c:
+	- reduce number of returns before end of function
+
+2016-10-18 12:21 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0c5585ea02ea)
+
+	* tclcmds.c:
+	- use macro for format code for ssize_t
+
+2016-10-18 12:20 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2f5fcae2d8a8)
+
+	* nsdbpg.c:
+	- remove dead assignment
+
+2016-10-10 22:52 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (17b212eeb33d)
+
+	* nsdbpg.c:
+	- fix return code
+
+2016-10-08 09:03 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6a2313464a00)
+
+	* nsdbpg.c, tclcmds.c:
+	- cleanup of int/signed conversions
+
+2016-09-27 13:23 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1481522b8aa5)
+
+	* nsdbpg.c:
+	- reduce number of returns per function
+	- reduce variable scopes
+
+2016-09-26 12:56 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1bc772b84cb4)
+
+	* tclcmds.c:
+	- reduce usage of Tcl_AppendResult()
+	- reduce number of return statements per function
+	- make sure, string on stack starts with null character
+
+2016-08-02 21:30 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bc6b2c0fb11d)
+
+	* tclcmds.c:
+	- adding const declarations
+
+2016-08-01 09:35 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e03b29fd45b1)
+
+	* tclcmds.c:
+	- don't use boolean as argument of comparison
+
+2016-07-27 09:54 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (006706bc384c)
+
+	* tclcmds.c:
+	- reduce implicit conversions
+
+2016-07-25 09:18 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (31e42adeec54)
+
+	* dbpg.h:
+	- prefer boolean over int
+
+2016-07-18 14:15 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (527098e1e925)
+
+	* nsdbpg.c, tclcmds.c:
+	- add const declarations
+	- fix implicit conversion from 0 to NULL
+
+2016-07-13 19:28 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e94f67676788)
+
+	* nsdbpg.c, tclcmds.c:
+	- use Ns_ReturnCode on more occations
+
+2016-07-08 13:17 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cfb5a279ec4a)
+
+	* tclcmds.c:
+	- avoid double initialization
+	- use bool instead of int
+	- use Ns_ReturnCode instead of int
+
+2016-06-27 09:31 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (25ed9ad4f284)
+
+	* tclcmds.c:
+	- align to prototype
+
+2016-06-11 18:37 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c773efa32915)
+
+	* tclcmds.c:
+	- don't use boolean argument to equal operator
+
+2016-06-06 10:15 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (20e4e2c245d2)
+
+	* tclcmds.c:
+	- make conditionals boolean expressions
+
+2016-06-06 08:59 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f5f69575900d)
+
+	* tclcmds.c:
+	- adding const declarations
+
+2016-06-05 17:42 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (7d0459532969)
+
+	* nsdbpg.c:
+	- ignoring results explicitly
+
+2016-06-05 17:10 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bc41727dc866)
+
+	* tclcmds.c:
+	- ignore results explicitly
+
+2016-02-16 14:48 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (eee5b628fbd8)
+
+	* tclcmds.c:
+	- reduce verbosity
+
+2016-01-17 18:36 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (9e0def6e8f53)
+
+	* README:
+	- advertise postgresql95 instead of postgresql94 for mac os x
+
+2016-01-17 18:36 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (17bed82fff07)
+
+	* Makefile:
+	- remove redundant cppcheck definition
+
+2016-01-17 18:33 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8bd4d0a0cc8f)
+
+	* tclcmds.c:
+	- fix conflict on prototpyes
+
+2016-01-10 19:44 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3dcb7829a95d)
+
+	* ChangeLog:
+	- updated ChangeLog
+
 2016-01-10 19:35 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3071b3958a13 [tip])
         * README, dbpg.h, nsdbpg.c, tclcmds.c:
         - added version number (2.1, ... why not)
@@ -129,7 +389,7 @@
 
 2014-11-01 02:24 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (64402f5572d7)
         * nsdbpg.c, tclcmds.c:
-        - prefer boolen expressions
+        - prefer boolean expressions
 
 2014-11-01 00:48 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (195c7e50458b)
         * nsdbpg.c:
@@ -272,7 +532,7 @@
 
 	* nsdbpg.c: Untabify, reindent and reorganize. Drop emulation code
 	for AOLserver 2.x ns_table etc. commands.
-	* tclcmds.c: Split extra Tcl commands and bind vaiable emulation
+	* tclcmds.c: Split extra Tcl commands and bind variable emulation
 	code into new file.
 	* nsdbpg.h:
 	* dbpg.h: Rename header to reflect it's private status. Move all

@@ -37,7 +37,7 @@
 #ifndef DBPG_H
 #define DBPG_H
 
-#define NSDBPG_VERSION "2.3"
+#define NSDBPG_VERSION "2.4"
 
 /*
  * In order to obtain PG_VERSION_NUM and PG_VERSION we load the
