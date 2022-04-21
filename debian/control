@@ -2,13 +2,13 @@ Source: naviserver-nsdbpg
 Section: web
 Priority: optional
 Maintainer: Qcode Software Ltd <hackers@qcode.co.uk>
-Build-Depends: debhelper (>= 9), libpq-dev, libpq5, naviserver-dev (>= 4.99.19)
+Build-Depends: debhelper (>= 9), libpq-dev, libpq5, naviserver-dev (>= 4.99.23)
 Standards-Version: 3.9.8
 #Vcs-Git: git://git.debian.org/collab-maint/naviserver-nsdbpg.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/naviserver-nsdbpg.git;a=summary
 
 Package: naviserver-nsdbpg
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, naviserver (>=4.99.19) , naviserver-core (>=4.99.19)
+Depends: ${shlibs:Depends}, ${misc:Depends}, naviserver (>=4.99.19) , naviserver-core (>=4.99.23)
 Description: Naviserver Postgresql drivers
  nsdbpg drivers allowing Naviserver to speak to Postgresql DBs.
