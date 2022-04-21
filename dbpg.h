@@ -37,7 +37,7 @@
 #ifndef DBPG_H
 #define DBPG_H
 
-#define NSDBPG_VERSION "2.4"
+#define NSDBPG_VERSION "2.6"
 
 /*
  * In order to obtain PG_VERSION_NUM and PG_VERSION we load the
@@ -50,6 +50,7 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_NAME
 #undef PACKAGE_BUGREPORT
+#undef PACKAGE_URL
 
 #include <nsdb.h>
 #include <libpq-fe.h>
@@ -66,6 +67,7 @@ typedef struct Connection {
     int             nCols;
     int             nTuples;
     int             curTuple;
+    Ns_Time         transactionStartTime;
     bool            in_transaction;
 } Connection;
 
@@ -74,3 +76,12 @@ extern int Ns_PgServerInit(const char *server, const char *module, const char *d
 
 
 #endif /* DBPG_H */
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * indent-tabs-mode: nil
+ * End:
+ */
