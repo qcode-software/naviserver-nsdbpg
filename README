@@ -1,4 +1,3 @@
-
 What is this?
 ------------
 
@@ -26,8 +25,8 @@ How does it work?
 
 Driver modules look much like ordinary AOLserver modules but are
 loaded differently.  Instead of being listed with other modules in the
-[ns\server\<server-name>\modules] configuration section, a database
-driver is listed in the [ns\db\drivers] section and nsdb does
+[ns/server/<server-name>/modules] configuration section, a database
+driver is listed in the [ns/db/drivers] section and nsdb does
 the loading.  The database driver initialization function normally does
 little more than call the nsdb Ns_DbRegisterDriver() function with an
 array of pointers to functions.  The functions are then later used by
@@ -43,13 +42,13 @@ PostgreSQL connection in a Tcl script.
 
 Contributors to this file include:
 
-	Don Baccus		<dhogaza@pacifier.com>
-	Lamar Owen		<lamar.owen@wgcr.org>
-	Jan Wieck		<wieck@debis.com>
-	Keith Pasket		(SDL/USU)
-	Scott Cannon, Jr.	(SDL/USU)
+        Don Baccus		<dhogaza@pacifier.com>
+        Lamar Owen		<lamar.owen@wgcr.org>
+        Jan Wieck		<wieck@debis.com>
+        Keith Pasket		(SDL/USU)
+        Scott Cannon, Jr.	(SDL/USU)
         Dan Wickstrom           <danw@rtp.ericsson.se>
-	Scott S. Goodwin	<scott@scottg.net>
+        Scott S. Goodwin	<scott@scottg.net>
         Gustaf Neumann          <neumann@wu-wien.ac.at>
 
 Original example driver by Jim Davidson
@@ -61,58 +60,98 @@ Use something like the following snippet in the configuration of
 NaviServer. We assume here that the Tcl variables db_host, db_port,
 db_name and db_user as set accordingly.
 
-===========================================================
-   ns_section ns/db/pools {
+    ===========================================================
+    ns_section ns/db/pools {
        ns_param   pool1              "Pool 1"
-   }
-   ns_section ns/db/pool/pool1 {
+    }
+    ns_section ns/db/pool/pool1 {
        # ns_param	maxidle            0
        # ns_param	maxopen            0
-       ns_param	  connections        15
+       ns_param   connections        15
        ns_param   LogMinDuration     0.01   ;# when SQL logging is on, log only statements above this duration
-       ns_param	  logsqlerrors       true
-       ns_param	  driver             postgres
-       ns_param	  datasource         "${db_host}:${db_port}:dbname=${db_name}"
-       ns_param	  user               $db_user
-       ns_param	  password           ""
+       ns_param   logsqlerrors       true
+       ns_param   driver             postgres
+       ns_param   datasource         "${db_host}:${db_port}:dbname=${db_name}"
+       ns_param   user               $db_user
+       ns_param   password           ""
     }
-===========================================================
+    ===========================================================
 
 If the database is reachable just via SSL, the appropriate
 PostgreSQL "conninfo" parameters can be added to the datasource.
 
-===========================================================
+    ===========================================================
     ...
-       ns_param	  datasource         "${db_host}:${db_port}:dbname=${db_name} sslmode=require"
+       ns_param   datasource         "${db_host}:${db_port}:dbname=${db_name} sslmode=require"
     ...
-===========================================================
+    ===========================================================
 
+
+Provided API:
+
+ - ns_pg_bind:
+
+   This is a variant of the "ns_db" API for evaluating PostgreSQL
+   statements, supporting bind variables (denoted in SQL statements
+   starting with a ":"). The values for the bind variables are either
+   from the ns_set provided via the "-bind" option or from the calling
+   environment.
+
+       ns_pg_bind dml     /handle/ -bind /bind/ /sql/
+       ns_pg_bind 1row    /handle/ -bind /bind/ /sql/
+       ns_pg_bind 0or1row /handle/ -bind /bind/ /sql/
+       ns_pg_bind select  /handle/ -bind /bind/ /sql/
+       ns_pg_bind exec    /handle/ -bind /bind/ /sql/
+
+ - ns_pg:
+
+   ns_pg is a variant of the "ns_db" API for directly interacting with
+   the PostgreSQL client library, including BLOB support (which is
+   probably outdated).
+
+       ns_pg blob_dml_file    /handle/ /blobId/ /filename/
+       ns_pg blob_get         /handle/ /blobId/
+       ns_pg blob_put         /handle/ /blobId/ /value/
+       ns_pg blob_select_file /handle/ /blobId/ /filename/
+       ns_pg blob_write       /handle/ /blobId/
+       ns_pg db               /handle/
+       ns_pg error            /handle/
+       ns_pg host             /handle/
+       ns_pg ntuples          /handle/
+       ns_pg number           /handle/
+       ns_pg options          /handle/
+       ns_pg pid              /handle/
+       ns_pg port             /handle/
+       ns_pg status           /handle/
 
 
 DEVELOPER'S GUIDE:
 
 Run 'make help' for developer information.
 
-The build step needs from PostgreSQL 
+The build step needs from PostgreSQL
  - the include file libpq-fe.h
  - the library libpq.*
 
 Examples for a build operation:
 
-    export PG=/usr/local/pg965
-    make PGLIB=$PG/lib PGINCLUDE=$PG/include
+     export PG=/usr/local/pg14
+     make PGLIB=$PG/lib PGINCLUDE=$PG/include
 
-    make PGINCLUDE=/usr/include/postgresql
+     make PGINCLUDE=/usr/include/postgresql
 
 To build/install on a non-standard path, use e.g.:
-    export PG=/usr/local/pg965
-    make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/
-    make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/ install
+
+     export PG=/usr/local/pg14
+     make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/
+     make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/ install
 
 Under MacPorts, you might use something like:
-    PGPATH=postgresql12 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/
+
+     PGPATH=postgresql14 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/
 
 For extended code checking via cppchek, one might use e.g.
-     PGPATH=postgresql12 &&make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/ cppcheck
+
+     PGPATH=postgresql14 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/ cppcheck
 
 See the Makefile for further information on building this module.
