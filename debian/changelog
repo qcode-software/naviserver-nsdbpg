@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.24~rc1a-1+deb9u1) stretch; urgency=medium
+
+  * Import from upstream
+
+ -- Qcode Software Ltd <hackers@qcode.co.uk>  Mon, 25 Apr 2022 14:20:57 +0100
+
 naviserver-nsdbpg (4.99.20~20201223-1+deb9u1) stretch; urgency=medium
 
   * Import from upstream
