@@ -439,7 +439,7 @@
 
 2014-09-19 20:16 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (403af76b230a)
         * dbpg.h:
-        - use angle brackets for include file names
+        - use angle brackets for include filenames
 
 2014-05-12 15:39 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (741265c7404f)
         * tclcmds.c:
