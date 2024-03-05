@@ -37,7 +37,7 @@
 #ifndef DBPG_H
 #define DBPG_H
 
-#define NSDBPG_VERSION "2.6"
+#define NSDBPG_VERSION "2.8"
 
 /*
  * In order to obtain PG_VERSION_NUM and PG_VERSION we load the
@@ -56,6 +56,24 @@
 #include <libpq-fe.h>
 
 /*
+ * Forward compatibility, in case a new version of the module is compiled
+ * against an old version of NaviServer.
+ */
+#ifndef TCL_SIZE_T
+# define TCL_SIZE_T           int
+#endif
+#ifndef TCL_OBJC_T
+# define TCL_OBJC_T           int
+#endif
+#ifndef TCL_OBJCMDPROC_T
+# define TCL_OBJCMDPROC_T     Tcl_ObjCmdProc
+# define TCL_CREATEOBJCOMMAND Tcl_CreateObjCommand
+#endif
+#ifndef TCL_INDEX_NONE
+# define TCL_INDEX_NONE       -1
+#endif
+
+/*
  * The following structure maintains per handle data
  * specific to postgres.
  */ 
@@ -72,8 +90,7 @@ typedef struct Connection {
 } Connection;
 
 extern const char *pgDbName;
-extern int Ns_PgServerInit(const char *server, const char *module, const char *driver);
-
+extern Ns_ReturnCode Ns_PgServerInit(const char *server, const char *module, const char *driver);
 
 #endif /* DBPG_H */
 

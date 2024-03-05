@@ -44,7 +44,7 @@
 typedef struct linkedListElement_t {
     struct linkedListElement_t *next;
     const char                 *chars;
-    int                         length;
+    TCL_SIZE_T                  length;
 } linkedListElement_t;
 
 
@@ -52,13 +52,14 @@ typedef struct linkedListElement_t {
  * Local functions defined in this file.
  */
 
-static Tcl_ObjCmdProc PgObjCmd;
-static Tcl_ObjCmdProc PgBindObjCmd;
-static Tcl_ObjCmdProc PgBindDmlObjCmd;
-static Tcl_ObjCmdProc PgBindOneRowObjCmd;
-static Tcl_ObjCmdProc PgBindZeroOrOneRowObjCmd;
-static Tcl_ObjCmdProc PgBindSelectObjCmd;
-static Tcl_ObjCmdProc PgBindExecObjCmd;
+static TCL_OBJCMDPROC_T PgBindDmlObjCmd;
+static TCL_OBJCMDPROC_T PgBindExecObjCmd;
+static TCL_OBJCMDPROC_T PgBindObjCmd;
+static TCL_OBJCMDPROC_T PgBindOneRowObjCmd;
+static TCL_OBJCMDPROC_T PgBindSelectObjCmd;
+static TCL_OBJCMDPROC_T PgBindZeroOrOneRowObjCmd;
+static TCL_OBJCMDPROC_T PgObjCmd;
+static TCL_OBJCMDPROC_T PgPrepareObjCmd;
 
 static Ns_TclTraceProc AddCmds;
 
@@ -67,7 +68,7 @@ static const Tcl_ObjType *intTypePtr = NULL;
 static int DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, const char *sql)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(3) NS_GNUC_NONNULL(4);
 
-static linkedListElement_t *linkedListElement_new(const char *chars, int length)
+static linkedListElement_t *linkedListElement_new(const char *chars, TCL_SIZE_T length)
     NS_GNUC_NONNULL(1)
     NS_GNUC_RETURNS_NONNULL;
 
@@ -75,7 +76,7 @@ static int LinkedList_len(const linkedListElement_t *head);
 static void LinkedList_free_list (linkedListElement_t *head);
 
 static linkedListElement_t *
-ListElementExternal(const char *msg, char *chars, int len, Tcl_DString *encDsPtr)
+ListElementExternal(const char *msg, char *chars, TCL_SIZE_T len, Tcl_DString *encDsPtr)
     NS_GNUC_NONNULL(1) NS_GNUC_NONNULL(2) NS_GNUC_NONNULL(4)
     NS_GNUC_RETURNS_NONNULL;
 
@@ -144,13 +145,14 @@ Ns_PgServerInit(const char *server, const char *UNUSED(module), const char *UNUS
     return Ns_TclRegisterTrace(server, AddCmds, NULL, NS_TCL_TRACE_CREATE);
 }
 
-static Ns_ReturnCode
+static int
 AddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
 {
-    (void)Tcl_CreateObjCommand(interp, "ns_pg",      PgObjCmd,     NULL, NULL);
-    (void)Tcl_CreateObjCommand(interp, "ns_pg_bind", PgBindObjCmd, NULL, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_pg",      PgObjCmd,     NULL, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_pg_bind", PgBindObjCmd, NULL, NULL);
+    (void)TCL_CREATEOBJCOMMAND(interp, "ns_pg_prepare", PgPrepareObjCmd, NULL, NULL);
 
-    return NS_OK;
+    return TCL_OK;
 }
 
 
@@ -171,7 +173,7 @@ AddCmds(Tcl_Interp *interp, const void *UNUSED(arg))
  */
 
 static int
-PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *const argv[])
+PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T argc, Tcl_Obj *const argv[])
 {
     Ns_DbHandle      *handle;
     const Connection *pconn;
@@ -288,7 +290,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *c
 
     case DbIdx:
         if (argc == 3) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQdb(pconn->pgconn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQdb(pconn->pgconn), TCL_INDEX_NONE));
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -297,7 +299,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *c
 
     case HostIdx:
         if (argc == 3) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQhost(pconn->pgconn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQhost(pconn->pgconn), TCL_INDEX_NONE));
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -306,7 +308,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *c
 
     case OptionsIdx:
         if (argc == 3) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQoptions(pconn->pgconn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQoptions(pconn->pgconn), TCL_INDEX_NONE));
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -315,7 +317,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *c
 
     case PortIdx:
         if (argc == 3) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQport(pconn->pgconn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQport(pconn->pgconn), TCL_INDEX_NONE));
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -333,7 +335,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *c
 
     case ErrorIdx:
         if (argc == 3) {
-            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQerrorMessage(pconn->pgconn), -1));
+            Tcl_SetObjResult(interp, Tcl_NewStringObj(PQerrorMessage(pconn->pgconn), TCL_INDEX_NONE));
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -344,7 +346,7 @@ PgObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int argc, Tcl_Obj *c
         if (argc == 3) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(PQstatus(pconn->pgconn) == CONNECTION_OK
                                                       ? "ok"
-                                                      : "bad", -1));
+                                                      : "bad", TCL_INDEX_NONE));
         } else {
             Tcl_WrongNumArgs(interp, 2, argv, "handle");
             result = TCL_ERROR;
@@ -496,7 +498,7 @@ ParsedSQLSetFromAny(Tcl_Interp *UNUSED(interp),
  * ListElementExternal --
  *
  *      Return a ListElement with the content converted to external
- *      (UTF-8).  The last argument is used for termporary storage.
+ *      (UTF-8).  The last argument is used for temporary storage.
  *
  * Results:
  *      None.
@@ -507,9 +509,9 @@ ParsedSQLSetFromAny(Tcl_Interp *UNUSED(interp),
  *----------------------------------------------------------------------
  */
 static linkedListElement_t *
-ListElementExternal(const char *msg, char *chars, int len, Tcl_DString *encDsPtr)
+ListElementExternal(const char *msg, char *chars, TCL_SIZE_T len, Tcl_DString *encDsPtr)
 {
-    int encodedLength;
+    TCL_SIZE_T encodedLength;
 
     NS_NONNULL_ASSERT(chars != NULL);
     NS_NONNULL_ASSERT(encDsPtr != NULL);
@@ -529,7 +531,7 @@ ListElementExternal(const char *msg, char *chars, int len, Tcl_DString *encDsPtr
  *
  *      Return a string (SQL command) with substituted bind variables in
  *      external encoding. When the command returns NULL, an error message is
- *      set in the interpreter result.
+ *      left in the interpreter result.
  *
  * Results:
  *      Non-NULL SQL or NULL on failure.
@@ -600,7 +602,7 @@ SqlObjToString(Tcl_Interp *interp, Ns_Set *bindSet, Tcl_Obj *sqlObj, Tcl_DString
              ) {
             const char *p;
             char       *value = NULL;
-            int         valueLength = -1;
+            TCL_SIZE_T  valueLength = TCL_INDEX_NONE;
 
             if (frag_p != NULL) {
                 /*
@@ -650,7 +652,9 @@ SqlObjToString(Tcl_Interp *interp, Ns_Set *bindSet, Tcl_Obj *sqlObj, Tcl_DString
                      * The bind values are provided explicitly via an ns_set.
                      */
                     value = (char *)Ns_SetGet(bindSet, var_p->chars);
-                    valueLength = strlen(value);
+                    if (value != NULL) {
+                        valueLength = (TCL_SIZE_T)strlen(value);
+                    }
                 }
 
                 if (value == NULL) {
@@ -671,9 +675,9 @@ SqlObjToString(Tcl_Interp *interp, Ns_Set *bindSet, Tcl_Obj *sqlObj, Tcl_DString
                 } else {
                     Tcl_DString  encDs, *encDsPtr = &encDs;
                     const char  *encodedString;
-                    int          encodedLength;
+                    TCL_SIZE_T   encodedLength;
 
-                    Tcl_UtfToExternalDString(NULL, value, valueLength, encDsPtr);
+                    (void)Tcl_UtfToExternalDString(NULL, value, valueLength, encDsPtr);
                     encodedLength = encDsPtr->length;
                     encodedString = encDsPtr->string;
                     if (strlen(encodedString) < (size_t)encodedLength) {
@@ -766,7 +770,7 @@ SqlObjToString(Tcl_Interp *interp, Ns_Set *bindSet, Tcl_Obj *sqlObj, Tcl_DString
  *----------------------------------------------------------------------
  */
 static int
-PgBindDmlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+PgBindDmlObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_Set         *bindSet = NULL;
     Tcl_Obj        *sqlObj;
@@ -818,7 +822,7 @@ PgBindDmlObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *co
  *----------------------------------------------------------------------
  */
 static int
-PgBindOneRowObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+PgBindOneRowObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_Set         *bindSet = NULL;
     Tcl_Obj        *sqlObj;
@@ -874,7 +878,7 @@ PgBindOneRowObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *----------------------------------------------------------------------
  */
 static int
-PgBindZeroOrOneRowObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+PgBindZeroOrOneRowObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_Set         *bindSet = NULL;
     Tcl_Obj        *sqlObj;
@@ -936,7 +940,7 @@ PgBindZeroOrOneRowObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tc
  *----------------------------------------------------------------------
  */
 static int
-PgBindSelectObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+PgBindSelectObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_Set         *bindSet = NULL;
     Tcl_Obj        *sqlObj;
@@ -992,7 +996,7 @@ PgBindSelectObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj 
  *----------------------------------------------------------------------
  */
 static int
-PgBindExecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+PgBindExecObjCmd(ClientData clientData, Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     Ns_Set         *bindSet = NULL;
     Tcl_Obj        *sqlObj;
@@ -1056,7 +1060,7 @@ PgBindExecObjCmd(ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *c
  */
 
 int
-PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Obj *const* objv)
+PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
 {
     char        *handleString = (char*)NS_EMPTY_STRING;
     Ns_DbHandle *handle;
@@ -1097,6 +1101,102 @@ PgBindObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, int objc, Tcl_Ob
         Ns_DStringFree(&handle->dsExceptionMsg);
         handle->cExceptionCode[0] = '\0';
         result = Ns_SubcmdObjv(subcmds, (ClientData)handle, interp, objc, objv);
+    }
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PgPrepareObjCmd --
+ *
+ *      Implements "ns_pg_prepare /sql/".
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      Depends on subcommand.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+PgPrepareObjCmd(ClientData UNUSED(clientData), Tcl_Interp *interp, TCL_OBJC_T objc, Tcl_Obj *const* objv)
+{
+    Tcl_Obj        *sqlObj;
+    int             result = TCL_OK;
+    Ns_ObjvSpec     args[] = {
+        {"sql",    Ns_ObjvObj, &sqlObj, NULL},
+        {NULL, NULL, NULL, NULL}
+    };
+
+    if (Ns_ParseObjv(NULL, args, interp, 1, objc, objv) != NS_OK) {
+        result = TCL_ERROR;
+
+    } else {
+        Tcl_DString                ds, *dsPtr = &ds, varDs, *varDsPtr = &varDs;
+        linkedListElement_t       *bind_variables, *sql_fragments;
+        const linkedListElement_t *var_p, *frag_p;
+        Tcl_Obj                   *dictObj = Tcl_NewDictObj();
+        Tcl_Obj                   *namesObj = Tcl_NewListObj(0, NULL);
+        int                        varCount = 0;
+
+        Tcl_DStringInit(dsPtr);
+        Tcl_DStringInit(varDsPtr);
+        Ns_DStringNAppend(varDsPtr, ":", 1);
+
+        parse_bind_variables(Tcl_GetString(sqlObj),
+                             &bind_variables,
+                             &sql_fragments);
+
+        for (var_p = bind_variables, frag_p = sql_fragments;
+             var_p != NULL || frag_p != NULL;
+             ) {
+
+            if (frag_p != NULL) {
+                Ns_DStringNAppend(dsPtr, frag_p->chars, frag_p->length);
+                frag_p = frag_p->next;
+            }
+
+            if (var_p != NULL) {
+                char   buf[TCL_INTEGER_SPACE + 2];
+                int    bufLen;
+
+                /*
+                 * Append substitution variables in the SQL body
+                 */
+                bufLen = snprintf(buf, sizeof(buf), "$%d", ++varCount);
+                Ns_DStringNAppend(dsPtr, buf, bufLen);
+                /*
+                 * Return the names of the substituted variables for the
+                 * signature of the prepared statement.
+                 */
+                Ns_DStringNAppend(varDsPtr, var_p->chars, var_p->length);
+                Tcl_ListObjAppendElement(interp, namesObj,
+                                         Tcl_NewStringObj(varDsPtr->string, varDsPtr->length));
+                Tcl_DStringSetLength(varDsPtr, 1);
+                var_p = var_p->next;
+            }
+        }
+
+        /*
+         * Return a dict with the keys "sql" and "args".
+         */
+        (void) Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("sql", 3),
+                              Tcl_NewStringObj(dsPtr->string, dsPtr->length));
+        (void) Tcl_DictObjPut(interp, dictObj, Tcl_NewStringObj("args", 4),
+                              namesObj);
+        Tcl_SetObjResult(interp, dictObj);
+
+        Tcl_DStringFree(dsPtr);
+        Tcl_DStringFree(varDsPtr);
+
+        if (sql_fragments != NULL)  {
+            LinkedList_free_list(sql_fragments);
+        }
+        if (bind_variables != NULL) {
+            LinkedList_free_list(bind_variables);
+        }
     }
     return result;
 }
@@ -1152,7 +1252,7 @@ DbFail(Tcl_Interp *interp, Ns_DbHandle *handle, const char *cmd, const char *sql
     if (handle->verbose) {
         if (strlen(sql) > maxLen) {
             Ns_DStringPrintf(&ds, "\nSQL (truncated to %lu characters): ", maxLen);
-            Ns_DStringNAppend(&ds, sql, (int)maxLen);
+            Ns_DStringNAppend(&ds, sql, (TCL_SIZE_T)maxLen);
             Ns_DStringNAppend(&ds, "...", 3);
         } else {
             Ns_DStringPrintf(&ds, "\nSQL: %s", sql);
@@ -1502,7 +1602,8 @@ write_to_stream(int fd, Ns_Conn *conn, const void *bufp, size_t length, bool to_
 static int
 blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *valueObj)
 {
-    int                  segment, value_len, result = TCL_OK;
+    int                  segment, result = TCL_OK;
+    TCL_SIZE_T           value_len;
     unsigned char        out_buf[8001];
     const unsigned char *value_ptr;
     char                 query[10000], *segment_pos;
@@ -1522,7 +1623,8 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *
     segment = 1;
 
     while (value_len > 0) {
-        int i, j, segment_len = value_len > 6000 ? 6000 : value_len;
+        int i, j;
+        TCL_SIZE_T segment_len = value_len > 6000 ? 6000 : value_len;
 
         value_len -= segment_len;
         for (i = 0, j = 0; i < segment_len; i += 3, j+=4) {
@@ -1530,7 +1632,9 @@ blob_put(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, Tcl_Obj *
         }
         out_buf[j] = UCHAR('\0');
 
-        sprintf(segment_pos, "%d, %d, '%s')", segment, segment_len, out_buf);
+        sprintf(segment_pos, "%d, %" PRITcl_Size ", '%s')",
+                segment, segment_len, out_buf);
+
         if (Ns_DbExec(handle, query) != NS_DML) {
             Ns_TclPrintfResult(interp, "Error inserting data into BLOB");
             result = TCL_ERROR;
@@ -1625,7 +1729,7 @@ blob_dml_file(Tcl_Interp *interp, Ns_DbHandle *handle, const char *blob_id, cons
  */
 
 static linkedListElement_t *
-linkedListElement_new(const char *chars, int length)
+linkedListElement_new(const char *chars, TCL_SIZE_T length)
 {
     linkedListElement_t *elt;
 

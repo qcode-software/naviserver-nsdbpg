@@ -1,757 +1,1648 @@
-2019-04-18 19:23 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (803ce5540d62 [tip])
+commit c3a96d9ef4c0d85addd61d4c2d099a77995e0e6c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-10-31
 
-	* tclcmds.c:
-	support proper loading in multiple servers
+    optimization: avoid UTF8 conversion for int/bool/oid types
 
-2018-10-11 12:13 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (64d62e77b229)
+M	nsdbpg.c
 
-	* README:
-	add sample configuration section, including hints how to use SSL
-	connections to the database
+commit d0a40ac4b855d7b6f84df3e6e0ef7bac21013208
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-10-31
 
-2018-10-11 12:02 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0ed3cdea0445)
+    Fixed a potential memory leak in UTF-8 conversions
+    
+    A potential memory leak was introduced with the back and forth
+    conversion between "external" UTF8 and Tcl's internal UTF8
+    variant. The problem shows up when returning multiple tuples, where a
+    string value larger than TCL_DSTRING_STATIC_SIZE is returned (unless,
+    this comes from the last column). The problem was induced by an
+    irregularity passing Tcl_DStrings to functions. The function
+    Tcl_ExternalToUtfDString() blindly initializes the passed-in pointer
+    to a Tcl_DString, which will lead to a memory leak, if this
+    Tcl_DString has already a pre-allocated size.  So, e.g., the usual
+    idiom setting the length of the dsPtr to 0 to keep the pre-allocated
+    dynamic memory causes a leak.
 
-	* ChangeLog:
-	Improve spelling
+M	nsdbpg.c
 
-2018-08-15 17:23 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (4af072155475)
+commit 7a83f43038bca41f168b8f57fa5defa205128c94
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-10-31
 
-	* nsdbpg.c:
-	fix typo
+    update documentation of PostgreSQL 16
 
-2018-07-10 10:03 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c8b0babef888)
+M	README
 
-	* nsdbpg.c:
-	log begin/end transaction only, when verbose flag is on. probably,
-	one wants to have more flexibility on turing some verbosity flags on
-	or off.
+commit 34918091115a359cf9d0aa0a7691eace9034a54c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-31
 
-2018-03-28 10:18 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (4ac61ccfc593)
+    improve forward compatibility with TCL9
 
-	* tclcmds.c:
-	fix typo
+M	dbpg.h
 
-2018-02-13 21:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3055137d2e96)
+commit 7bc97dff057a3de64e6b9b40cf05dd4db9612b09
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-27
 
-	* tclcmds.c:
-	provide compatibbility with Tcl 8.7.2
+    move forward compatibility macros after other ns* includes
 
-2018-02-13 21:06 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (47efcda32e3e)
+M	dbpg.h
 
-	* nsdbpg.c:
-	don't use "==" operator for boolean values
+commit 367118cd12e5a450b5ac8df49763d3406b8f0448
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-27
 
-2017-12-11 12:05 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5a5fa7547f5b)
+    align prototype and function definition
 
-	* nsdbpg.c:
-	Improve backwards compatibility with ancient versions of PostgreSQL
+M	tclcmds.c
 
-2017-12-03 11:55 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (5fe29dad3b47)
+commit cd9b00c86901ba4e36579568f2716933e4350a65
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-27
 
-	* nsdbpg.c:
-	Add support for IPv6 addresses in IP-lteral notation use
-	consistently boolean for "fetchingRows"
+    added .gitignore file
 
-2017-12-03 11:54 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a999108eccac)
+A	.gitignore
 
-	* README:
-	use pg10 in README example
+commit 1d76a689c9aea0c9ffff7f67203e51a3c9726f8c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-27
 
-2017-10-18 11:00 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (85d465cd4525)
+    allow different levels of tc9 compatibility macros
 
-	* nsdbpg.c:
-	fix typo in message
+M	dbpg.h
 
-2017-10-17 09:49 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8b87c8867206)
+commit 2aaeacae3e00dc9e5fee0f38533f109b8197c563
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-27
 
-	* dbpg.h, nsdbpg.c:
-	Add more detailed version numbers about used versions during built
-	process
+    Fixed a potential problem with UTF-8 values in the database
+    
+    When the database contains UTF-8 values which are not acceptable
+    in the used Tcl version, certain Tcl commands can crash. This
+    happened e.g. with "string tolower". This change fixes now such
+    cases.
 
-2017-10-17 09:47 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a7cc43eebe8b)
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
 
-	* README:
-	bump advertized pg version number
+commit ed969c9d8f8d756c0c57522eef87802dd569a90a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-07-24
 
-2017-10-05 15:48 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2f0bea2e246b)
+    fixed bug when variable is not included in bind var ns_set
+    
+    Also, improved Tcl9 compatibility
 
-	* tclcmds.c:
-	honor "logsqlerrors" settings from config file
+M	tclcmds.c
 
-2017-10-05 15:10 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d076e5d4fea1)
+commit 5b600cae17adf6797b8066b9903a08621eccdb0e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-04-19
 
-	* README:
-	Update README file for convenience
+    provide support for compiling new version of the module against old versions of NaviServer
 
-2017-10-05 15:09 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (13ee9a2e9666)
+M	tclcmds.c
 
-	* tclcmds.c:
-	truncate SQL statement in error.log to 10.000 chars if longer (to
-	avoid overlong log file entries)
+commit 56c7f3e841f42b9d23c2cbf406a539ca1cd9446d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-04-19
 
-2017-08-15 11:32 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (05e5d8cd6bcd)
+    Added support for TIP 627, 64bit object counts
+    
+    Bumped version number to 2.8
 
-	* README:
-	Update "recommended" version number to 9.6.4
+M	dbpg.h
+M	tclcmds.c
 
-2017-04-22 20:51 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cdaa477b3ab5)
+commit e570aa2dae6f51c73cfb8b7ea61200b0e85b0239
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-01-19
 
-	* nsdbpg.c, tclcmds.c:
-	fix spelling issues
+    improved spelling
 
-2017-04-22 14:13 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1b3f0727ec57)
+M	nsdbpg.c
 
-	* nsdbpg.c:
-	Fix spelling errors
+commit 3f2c48e3074f40c37fee31887fe7c3cde48d44dd
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2023-01-19
 
-2017-04-20 16:40 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (12404bd9a596)
+    new pg-driver specific command: ns_pg_prepare /sql/
+    
+    Return a dict building a prepared statement for the passed-in SQL
+    statement. The dict contains the keys "sql" and "args".
 
-	* dbpg.h, nsdbpg.c, tclcmds.c:
-	- Improve cleanness of compilation
-	- Use NsDb_DriverInitProc as prototype (requires actual version of
-	NaviServer)
-	- Bump version number to 2.2
+M	README
+M	dbpg.h
+M	tclcmds.c
 
-2016-12-31 13:39 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (df6b0e912bc2)
+commit 2da2303f68aba7168045126257e7174fda3f4bca
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-11-12
 
-	* dbpg.h, tclcmds.c:
-	- add const declarations
+    make explicit that function result is ignored
 
-2016-12-31 10:43 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c61303ced05d)
+M	tclcmds.c
 
-	* nsdbpg.c:
-	- make response codes explicit
+commit 752644c9413938eb20b17d1f8819afe58971c49f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-07-22
 
-2016-11-05 14:07 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6d3c289386b6)
+    removed necessity for setting NS_SET_DSTRING for the db driver
 
-	* nsdbpg.c:
-	- use bool datatype
+M	nsdbpg.c
 
-2016-11-05 13:27 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (853a5016d7a9)
+commit 4acec5b2ef67482c348592be61028230cb41faae
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-07-22
 
-	* nsdbpg.c:
-	- reduce number of returns before end of function
+    Provided a maximum value for keeping preallocated buffers
 
-2016-10-18 12:21 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0c5585ea02ea)
+M	nsdbpg.c
 
-	* tclcmds.c:
-	- use macro for format code for ssize_t
+commit 02782092229aeb8c77a682e04c9191fd2569252d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-07-20
 
-2016-10-18 12:20 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2f5fcae2d8a8)
+    fix const declarations
 
-	* nsdbpg.c:
-	- remove dead assignment
+M	nsdbpg.c
 
-2016-10-10 22:52 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (17b212eeb33d)
+commit 2171e20b34762fd647a4fb2db0ad537d18ce28f9
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-06-13
 
-	* nsdbpg.c:
-	- fix return code
+    Improved type cleanness
 
-2016-10-08 09:03 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6a2313464a00)
+M	tclcmds.c
 
-	* nsdbpg.c, tclcmds.c:
-	- cleanup of int/signed conversions
+commit 0ae3fcce8c65fc2622648838e5e1c31c16406df2
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-02-05
 
-2016-09-27 13:23 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1481522b8aa5)
+    Raise exception when a value for a bind variable contains a NUL character.
+    
+    This value is explicitly forbidden in text strings passed to PostgreSQL.
 
-	* nsdbpg.c:
-	- reduce number of returns per function
-	- reduce variable scopes
+M	tclcmds.c
 
-2016-09-26 12:56 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1bc772b84cb4)
+commit 28fa1669204dbb5b41d12b6df595f4bc3333f3f2
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2022-01-12
 
-	* tclcmds.c:
-	- reduce usage of Tcl_AppendResult()
-	- reduce number of return statements per function
-	- make sure, string on stack starts with null character
+    let "ns_pg" report available subcommands even when handle is not specified
+    
+    This makes the command compatible with the "icanuse" feature in OpenACS.
 
-2016-08-02 21:30 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bc6b2c0fb11d)
+M	tclcmds.c
 
-	* tclcmds.c:
-	- adding const declarations
+commit eda09eeaa09fcf381e240111d227f5a2a0fe320a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-12-08
 
-2016-08-01 09:35 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e03b29fd45b1)
+    Added "ns_pg pid /handle/" to return the current backend PID without SQL parsing.
+    Modernized Tcl-API interface: use Tcl_Objs for setting results.
+    Provide a minimal API description in the README file.
 
-	* tclcmds.c:
-	- don't use boolean as argument of comparison
+M	README
+M	nsdbpg.c
+M	tclcmds.c
 
-2016-07-27 09:54 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (006706bc384c)
+commit ae439e4be2ceeedab31fe89301e75f7ab69b60dd
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-12-05
 
-	* tclcmds.c:
-	- reduce implicit conversions
+    break overlong lines
 
-2016-07-25 09:18 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (31e42adeec54)
+M	tclcmds.c
 
-	* dbpg.h:
-	- prefer boolean over int
+commit 1598afdc746255a859c75fafe8e01d3c1baddc48
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-11-21
 
-2016-07-18 14:15 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (527098e1e925)
+    more cleanup
+    
+    - split up largish switch statement
+    - produce better error messages
+    - improved function naming
+    - added missing nonnull asserts
+    - reduced number of required strlen() operations
+    - bumped verison to 2.6
 
-	* nsdbpg.c, tclcmds.c:
-	- add const declarations
-	- fix implicit conversion from 0 to NULL
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
 
-2016-07-13 19:28 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e94f67676788)
+commit 90185dd160cf06f9c4dc797280c13dcc66af49ba
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-11-19
 
-	* nsdbpg.c, tclcmds.c:
-	- use Ns_ReturnCode on more occations
+    restrict bind vars to start with an alpha characer.
+    
+    This change is required for the slice notation of SQL arrays
+    in PostgreSQL
 
-2016-07-08 13:17 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cfb5a279ec4a)
+M	tclcmds.c
 
-	* tclcmds.c:
-	- avoid double initialization
-	- use bool instead of int
-	- use Ns_ReturnCode instead of int
+commit baafa64e1aa13970ed85acd337cf569dc0be315a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-11-18
 
-2016-06-27 09:31 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (25ed9ad4f284)
+    fix variable reference
 
-	* tclcmds.c:
-	- align to prototype
+M	tclcmds.c
 
-2016-06-11 18:37 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c773efa32915)
+commit d9b14af4b584ed3f02e498820c720a55ed7bdde4
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-11-18
 
-	* tclcmds.c:
-	- don't use boolean argument to equal operator
+    Added support for UTF-8 characters up to 4 bytes
+    
+    These changes add proper export of UTF-8 for Unicode symbols taking up
+    to 4 bytes. For the western world the biggest interest is probably for
+    emoticons. The change is implemented with performance in mind. The
+    proper encoded byte-strings are cached in Tcl_Objs, such that only the
+    values for bind-vars (which have probably different values per call)
+    have to be recoded at call time. This should keep the performance
+    penalty small (we see on some of our servers in day-average 1500 SQL
+    operations per second, peaks at >10K).
+    
+    The names of bind variables follow still the same rules as before (no
+    emoticons as variable names).
 
-2016-06-06 10:15 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (20e4e2c245d2)
+M	README
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
 
-	* tclcmds.c:
-	- make conditionals boolean expressions
+commit 75c676f06f86eb9a7bda8622c23e7210549d08e1
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-10-08
 
-2016-06-06 08:59 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f5f69575900d)
+    silence warnings for PostgreSQL 14
 
-	* tclcmds.c:
-	- adding const declarations
+M	dbpg.h
+M	nsdbpg.c
 
-2016-06-05 17:42 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (7d0459532969)
+commit 42dd8a2d8a9c609da3081037dbdfb36596545442
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-07-08
 
-	* nsdbpg.c:
-	- ignoring results explicitly
+    small maintenance:
+    
+    - made duration logging of transactions dependent on logminDuration
+    - made log entries more uniform
+    - added editor hints
 
-2016-06-05 17:10 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bc41727dc866)
+M	dbpg.h
+M	nsdbpg.c
 
-	* tclcmds.c:
-	- ignore results explicitly
+commit 9cab454371f57c47b18a0896d41e67d06f77ef52
+Author: Gustaf Neumann <neumann@wu.ac.at>
+Date:   2021-04-12
 
-2016-02-16 14:48 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (eee5b628fbd8)
+    README edited online with Bitbucket
 
-	* tclcmds.c:
-	- reduce verbosity
+M	README
 
-2016-01-17 18:36 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (9e0def6e8f53)
+commit 400afc1457316fdc8c7e9207bbb05dc0534ff10f
+Author: Gustaf Neumann <neumann@wu.ac.at>
+Date:   2021-04-12
 
-	* README:
-	- advertise postgresql95 instead of postgresql94 for mac os x
+    README edited online with Bitbucket
 
-2016-01-17 18:36 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (17bed82fff07)
+M	README
 
-	* Makefile:
-	- remove redundant cppcheck definition
+commit 85bae2f3cc1f30bf6a505dea09e6ff11549f0f39
+Author: Gustaf Neumann <neumann@wu.ac.at>
+Date:   2021-04-12
 
-2016-01-17 18:33 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8bd4d0a0cc8f)
+    README edited online with Bitbucket
 
-	* tclcmds.c:
-	- fix conflict on prototpyes
+M	README
 
-2016-01-10 19:44 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3dcb7829a95d)
+commit 5b511963c5c10d5f90050361710b7638d93b6a35
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-04-12
 
-	* ChangeLog:
-	- updated ChangeLog
+    whitespace changes
 
-2016-01-10 19:35 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (3071b3958a13 [tip])
-        * README, dbpg.h, nsdbpg.c, tclcmds.c:
-        - added version number (2.1, ... why not)
-        - moved access of pointers after nonnull checks
+M	README
 
-2016-01-10 19:33 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8a1f31b8080c)
-        * Makefile:
-        - added target cppcheck
+commit ae2e62d8818a0d9f9ab326c55b0296ca69a9842f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-01-10
 
-2016-01-05 17:02 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (27425affcf2e)
-        * tclcmds.c:
-        - fix uploading of (binary) blobs with "ns_pg blob_put" (necessary
-          to use bytearry)
-        - fix retrieving data from sql type "bytea": data has to be decoded
-          with PQunescapeBytea(). I wonder, since this every works, since this
-          function exists in PG at since 7.3!
-        - fix returning binary data in "ns_pg blob_get" (necessary to use
-          bytearry)
-        - fix streaming blobs consisting of multiple chunks (driver did a
-          close after the first chunk)
-        - use bool instead of integer variables for boolean values
+    Updated version numbers
 
-2015-11-28 15:02 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f727c8e707a0)
-        * tclcmds.c:
-        - use macro NS_NONNULL_ASSERT
+M	README
 
-2015-09-12 11:24 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (67f47b13ba6e)
-        * nsdbpg.c:
-        - report consistently the poolname when sqlDebug is turned on
+commit 741911a746b105f177c424e58445f6cc345e822a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2021-01-10
 
-2015-03-15 16:34 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1457ce024db6)
-        * tclcmds.c:
-        - use for statement just for loop controlling variables
+    improve comments
 
-2015-01-10 13:35 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2e97eafe474b)
-        * tclcmds.c:
-        - recast result of <<
+M	nsdbpg.c
+M	tclcmds.c
 
-2014-12-31 18:33 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (ad36a364c285)
-        * nsdbpg.c:
-        - reduce variable scope
+commit 03f427197435d0ac71eca26ed8dfe2608f324f6c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-11-09
 
-2014-12-20 08:47 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a51c27db2275)
-        * nsdbpg.c:
-        - fix newly introduced bug when moving assignment out of expression
+    force bindvars to start with alnum or underscore
 
-2014-12-13 19:58 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (945de8f1a00d)
-        * nsdbpg.c:
-        - move assignments out of if-conditions
+M	tclcmds.c
 
-2014-12-13 19:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (0e33575fc0cd)
-        * nsdbpg.c, tclcmds.c:
-        - reduce implicit conversions
-        - prefer lowercase over uppercase integer suffix
+commit a783a17f7961daa66a1e00e3fd0dfcc17f430511
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-11-09
 
-2014-12-04 07:56 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (340a23007ded)
-        * nsdbpg.c, tclcmds.c:
-        - use Debug(sql) instead of verbose flag
-        - use likely/unlikely to ease for branch prediction
+    prefer current release of PostgreSQL in documentation
 
-2014-11-25 18:14 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bcda2bb42581)
-        * tclcmds.c:
-        - remove misleading last arg from DbFail
-        - let switch statement end via break and not via return
+M	README
 
-2014-11-25 10:34 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e657418d3b3d)
-        * README, nsdbpg.c, tclcmds.c:
-        - adjust to new prototypes, add const declarations
+commit 895962452aaf4ab14bd054d87e54f464eca69570
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-07-26
 
-2014-11-22 17:44 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d6d90a0be691)
-        * dbpg.h, nsdbpg.c, tclcmds.c:
-        - resolve macro ENC (conflct with c90 reserved identifiers)
-        - avoid c90 identifiers starting with str[a-z]
-        - use ns_open/ns_close
-        - add const declarations
+    align spelling with LDP recommendations
 
-2014-11-20 11:31 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f90249f43782)
-        * tclcmds.c:
-        - avoid crash when "ns_pg" is called without a handle
-        - prefer standard tcl error messages via Tcl_WrongNumArgs() over other
-        solutions
-        - leave switch statement via breaks and not via returns
-        - use NS_INVALID_FD
+M	tclcmds.c
 
-2014-11-20 10:23 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (26eec6979a9a)
-        * tclcmds.c:
-        - avoid c90 identifier starting with str[a-z]
-        - add "const" constraints
+commit f164584c6a73dd66e163598d7eda00f4f0626678
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2020-05-08
 
-2014-11-14 14:15 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (a1e348a66f8c)
-        * tclcmds.c:
-        - add "default" labels to switch statements
-        - add editor hints to keep formatting conventions, prefer spaces
-        over tabs
+    avoid shadowing of symbol "bind"
 
-2014-11-11 09:24 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (6b35e0227efe)
-        * nsdbpg.c, tclcmds.c:
-        - use "const" when possible
-        - remove unneeded casts
-        - prefer size_t for sizes
-        - reduce implicit conversions
-        - prefer boolean expressions in if/while/... over expressions of other
-        types
+M	tclcmds.c
 
-2014-11-08 16:52 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (64d5e5518f8d)
-        * nsdbpg.c:
-        - convert enum explicitly to int
+commit a5008fecb0d362372aa38f06546cc46706692ef4
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-12-13
 
-2014-11-08 14:51 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (948e811eac78)
-        * tclcmds.c:
-        - factor out redundant code into get_blob_tuples()
-        - add nonnull assertions
+    update version number in sample config path
 
-2014-11-06 16:18 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (cab8a8fbf122)
-        * tclcmds.c:
-        - avoid implicit signed/unsigned conversion
+M	README
 
-2014-11-04 08:03 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (f789a0dccf70)
-        * dbpg.h, nsdbpg.c, tclcmds.c:
-        - remove unneeded include file
-        - use boolean expressions in conditions of conditional expressions
-        - adjust array sizes
+commit 5379680169e05cd59bb423fa91cb5c91ada51011
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-09-11
 
-2014-11-02 17:59 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (8427b2cc0988)
-        * nsdbpg.c, tclcmds.c:
-        - use UCHAR macro when appropriate
-        - use boolean expressions in conditions of conditional expressions
-        - reduce implicit signed/unsigned conversions
+    use static defintions when possible
+    don't use default, when all cases are enumerated
 
-2014-11-01 02:24 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (64402f5572d7)
-        * nsdbpg.c, tclcmds.c:
-        - prefer boolean expressions
+M	nsdbpg.c
+M	tclcmds.c
 
-2014-11-01 00:48 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (195c7e50458b)
-        * nsdbpg.c:
-        - adjust to main NaviServer
+commit 14759743f1ad9c8b61948aa388a3f5deb74ffa0b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-05-06
 
-2014-10-29 09:49 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (1a0735cf61f2)
-        * tclcmds.c:
-        - remove unneeded cast
-        - use parens for boolean expression
+    silence type conversion warnings (requires definitions from recent NaviServer ns_funcptr_t)
 
-2014-10-28 18:24 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (c41b605bfac6)
-        * nsdbpg.c, tclcmds.c:
-        - reduce implicit signed/unsigned conversions
-        - replace unsafe atoi() by strtol()
+M	nsdbpg.c
+M	tclcmds.c
 
-2014-10-24 17:24 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (ad6e1e6468fd)
-        * nsdbpg.c:
-        - declared more arguments as const
+commit a5a6ae56a78941180ed232f1a7f27664a14f3629
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-04-18
 
-2014-10-22 23:25 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (22d7d6b6a91f)
-        * dbpg.h, nsdbpg.c, tclcmds.c:
-        - use const on more occasions
+    bump version number
 
-2014-10-14 01:20 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (bc51eee05b3e)
-        * nsdbpg.c, tclcmds.c:
-        - reduce number of type conversions
-        - use const rather than CONST for internal purposes
+M	dbpg.h
 
-2014-10-12 15:38 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d662165d9758)
-        * dbpg.h, nsdbpg.c, tclcmds.c:
-        - use hex constants rather than octal constants
-        - flag unused variables with UNUSED
-        - reduce signed conversions / losses
+commit 7a0b94eb4734e8845b8032ff750d0a031bcade0c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-04-18
 
-2014-10-10 09:03 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (63538ae480eb)
-        * tclcmds.c:
-        - reduce number of unsigned -> signed conversions
+    whitespace changes
 
-2014-09-28 12:07 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (65cdabd98d60)
-        * tclcmds.c:
-        - remove useless assignments
+M	tclcmds.c
 
-2014-09-24 11:13 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (7c0e0617d1ed)
-        * tclcmds.c:
-        - fix indentation
-        - brace body of non-trivial if-expressions
+commit a4e25d958770de38b11a2633ed50c3576ab45826
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2019-04-18
 
-2014-09-19 20:16 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (403af76b230a)
-        * dbpg.h:
-        - use angle brackets for include filenames
+    support proper loading in multiple servers
 
-2014-05-12 15:39 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (741265c7404f)
-        * tclcmds.c:
-        - reduce variable scope
-        - use NULL instead of 0 for null-pointer
-        - don't assign to unread variable
+M	tclcmds.c
 
-2014-05-10 11:07 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (61976354ed83)
-        * tclcmds.c:
-        Initialize internal representations of Tcl_Objs of type
-        ParsedSQLObjType with zero bytes
+commit 3226b493f875b118eb568d68b5bde45a42dfc6df
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-10-11
 
-2014-05-02 11:54 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (575b5196dc17)
-        * Makefile, README, tclcmds.c:
-        Update README file with more examples
+    add sample configuration section, including hints how to use SSL connections to the database
 
-2013-05-25 20:35 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (065a1f7e23d7)
-        * .hgtags:
-        Added tag naviserver-4.99.5 for changeset 2b239302f68c
+M	README
 
-2013-05-25 20:35 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (2b239302f68c [naviserver-4.99.5])
-        * ChangeLog, README:
-        - updated Changelog and README files
+commit f87f084df3ae859ea99c06b22f4a2b6b9e43dff0
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-08-15
 
-2013-05-25 20:34 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (da732354303e)
-        * nsdbpg.c:
-        - fixed typo
+    fix typo
 
-2013-04-12 10:12 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (e40fd730cbb5 [tip])
-        * tclcmds.c:
-        - Introduced new tcl_obj type parsedSQL to keep compiled SQL
-	  state.  When possible, SQL queries are parsed once for bind vars
-	  emulation and the parsed SQL query can be reused later without the
-	  need for re-parsing. This improves the situation also for SQL
-	  queries without bind vars, since the compiled representation is
-	  aware of the fact and does not require string scanning.
-      - reduce malloc/free operations by avoiding string duplications
+M	nsdbpg.c
 
-2013-04-07 17:28 +0200  Gustaf Neumann  <neumann@wu-wien.ac.at>  (222da1b4b2c3)
+commit b7ab14a050a69452db71c9add67cb75582c85e26
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-07-10
 
-        * README, nsdbpg.c, tclcmds.c:
-        - changed cmd interface from TclCmd to TclObjCmd
-        - use caching lookup function (Tcl_GetIndexFromObj) for sub cmd lookup
-           to reduce string comparisons
-        - removed security warnings from static analyzer (potential buffer
-           overruns in scanf)
-        - removed compiler warnings
-        - added sample build line to README
+    log begin/end transaction only, when verbose flag is on.
+    probably, one wants to have more flexibility on turing some verbosity flags on or off.
 
-2012-01-09 11:22 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (53b14a13b010)
+M	nsdbpg.c
 
-        * Makefile:
-        Introduced PGINCLUDE and PGLIB to allow separate configuration.
-        Background: MacPorts uses a different directory structure making
-        this necessary.
+commit de1ef8ffd5dacedb9cfae9f353fee4a47fac1a81
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-03-28
 
-2012-01-07 17:08 +0100  Gustaf Neumann  <neumann@wu-wien.ac.at>  (d88b14cc53a3)
+    fix typo
 
-        * nsdbpg.c, tclcmds.c:
-        Fix resource leak Minor code cleanup
+M	tclcmds.c
 
-2011-07-97  Gustaf Neumann  <neumann@wu-wien.ac.at>
-	* tclcmds.c: Get rid of deprecated calls.
-	* tclcmds.c: using SQL escape string syntax E'...' when needed (required in
-	PostgreSql 9.1, when used in connection with OpenACS)
+commit 2cae07eb2ce3965c648ab527a4ae5c4ed16dd16a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-02-13
 
-2008-08-28  Vlad Seryakov  <seryakov@users.sf.net>
+    provide compatibbility with Tcl 8.7.2
 
-        * Added new RowCount API function
+M	tclcmds.c
 
-2005-08-09  Vlad Seryakov  <seryakov@users.sf.net>
+commit cc49d48e6dd61bb8e603b2369aa606d80725e85e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2018-02-13
 
-	* tclcmds.c: changed to stop using old Ns_ functions
+    don't use "==" operator for boolean values
 
-2005-08-01  Vlad Seryakov  <seryakov@users.sf.net>
+M	nsdbpg.c
 
-	* tclcmds.c: removed usage of old compat functions
+commit 82ce9f5245237a919b264c2e444bac455216df1a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-12-11
 
-2005-06-16  Vlad Seryakov  <seryakov@users.sf.net>
+    Improve backwards compatibility with ancient versions of PostgreSQL
 
-	* nsdbpg.c: removed undefined PgDbServerInit function
-	which prevented module to be loaded
+M	nsdbpg.c
 
-2005-06-15  Stephen Deasey  <sdeasey@users.sf.net>
+commit 68850b3e75807163b3838cdf485793263c56ec55
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-12-03
 
-	* dbpg.h:
-	* nsdbpg.c:
-	* tclcmds.c: Use a regular naming scheme for functions and
-	variables.
+    Add support for IPv6 addresses in IP-lteral notation
+    use consistently boolean for "fetchingRows"
 
-	* nsdbpg.c: Untabify, reindent and reorganize. Drop emulation code
-	for AOLserver 2.x ns_table etc. commands.
-	* tclcmds.c: Split extra Tcl commands and bind variable emulation
-	code into new file.
-	* nsdbpg.h:
-	* dbpg.h: Rename header to reflect it's private status. Move all
-	private declarations into c files, leaving just the handle
-	structure shared module wide.
-	* Makefile: Remove all the crud.
+M	nsdbpg.c
 
-2005-06-14  Stephen Deasey  <sdeasey@users.sf.net>
+commit 75a114d9fdef4700cd2c4130148de0c6f2001128
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-12-03
 
-	* Makefile: Update for initial import into NaviServer CVS.
-	* nsdbpg.h:
-	* nsdbpg.c: Renamed from nspostgres.x.
+    use pg10 in README example
 
-2003-03-29  Scott Goodwin  <scott@scottg.net>
+M	README
 
-	* Makefile: Fixed problem where if AS3 was not set, -lnsdb was not
-	being added to library list.
+commit a56de280c99e944ed7a387a7b8d3ecbdfadeac1f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-10-18
 
-	* Makefile: Added OPENSSL setting to allow you to specify where
-	OPENSSL is installed. This is required when compiling nspostgres
-	against a PostgreSQL installation that has been compiled with OpenSSL.
-	If you get lots of undefined symbols that look like _SSL, _PEM and so
-	on, then you need this flag.
+    fix typo in message
 
-2004-02-04  Lamar Owen <lowen@pari.edu>
-	* Roll a 4.0 tarball.
-	* Tag the 4.0 release.
+M	nsdbpg.c
 
-2003-10-02  Scott Goodwin  <scott@scottg.net>
+commit 8adf5e26d6065edb48eb5a5cf3b95869b78873e1
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-10-17
 
-	* Makefile: extra spaces at the end of one of the lines in the
-        check-env target were causing make failure. Error given was:
+    Add more detailed version numbers about used versions during built process
 
-        /bin/sh: -c: line 2: syntax error: unexpected end of file
-        make: *** [check-env] Error 2
+M	dbpg.h
+M	nsdbpg.c
 
-2003-09-27  Lamar Owen <lowen@pari.edu>
+commit f63b228ad86d2506c3abac13c0f521d1f571cdbf
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-10-17
 
-	* Added -lnsdb for AOLserver 4
-	* Added AS3 define for Makefile for building with AOLserver 3
+    bump advertized pg version number
 
-2003-02-17  Lamar Owen <lamar.owen@wgcr.org>
+M	README
 
-	* tagged and released 4.0beta1
+commit 45056d2f339e2bc8c6c6b44c4532c30889ff9b17
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-10-05
 
-2003-01-09  Lamar Owen <lamar.owen@wgcr.org>
+    honor "logsqlerrors" settings from config file
 
-	* nspostgres.h: changed include order and conditionals for
-	AOLserver 4 use.
+M	tclcmds.c
 
-2002-12-23  Lamar Owen <lamar.owen@wgcr.org>
+commit 88240dfd515fb58df5cad275cd82f72dc367240f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-10-05
 
-	* nspostgres release 3.5 Official
+    Update README file for convenience
 
-2002-12-18  Lamar Owen <lamar.owen@wgcr.org>
+M	README
 
-	* nspostgres.h and nspostgres.c: corrected some misinformation
-	in the comments.
+commit 4047236ac2c7b4c671d011b251a5e2954a2908b0
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-10-05
 
-	* nspostgres.h: ChangeLog not in comments anymore; neither is the
-	contributor list.
+    truncate SQL statement in error.log to 10.000 chars if longer (to avoid overlong log file entries)
 
-	* corrected contributor list in README.
+M	tclcmds.c
 
-2002-12-13  Scott S. Goodwin  <scott@scottg.net>
+commit bf3e0efddb2a13ade2aba15de29164cf52f6ba9f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-08-15
 
-	* Makefile: Added targets for tagging and file release. Do a 'make
-	help' to see it.
+    Update "recommended" version number to 9.6.4
 
-	* OVERWRITE: I have taken the latest OpenACS version of their postgres
-	module and overwritten the "pre-don" version. Had to take postgres.c
-	and split it into nspostgres.c and .h. Updated nspostgres Makefile to
-	allow compiling with the ACS flag, and to allow setting POSTGRES var
-	to "LSB" which will cause the module to look for PostgreSQL libraries
-	in the standard Linux locations. Lamar Owen is now primary maintainer
-	of this code.
+M	README
 
-2002-09-29  Scott Goodwin  <scott@scottg.net>
+commit c4fa1d42ae003a3d3aaf72e1e16d0b35d0a0650b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-22
 
-	* STARTING OVER: I'm tagging the nspostgres tree as "pre-don". Don
-	Baccus is going to be checking out the tree and either working
-	with what I've done here, or replacing it all with the current
-	version of the OpenACS postgres module. The name of the module
-	will stay nspostgres.
+    fix spelling issues
 
-2002-07-01  Scott S. Goodwin  <scott@scottg.net>
+M	nsdbpg.c
+M	tclcmds.c
 
-	* all: reset file perms to 0644 for all files except the CVS
-	directory.
+commit dbf66d83e965af913165e176bf783994b6b7afd9
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-22
 
-2002-06-02  Scott S. Goodwin  <scott@scottg.net>
+    Fix spelling errors
 
-	* nspostgres.c: Incorporated latest patches from the postgres
-	module that the OpenACS team maintains.
+M	nsdbpg.c
 
-	* TODO: Removed this file.
+commit 550d40da9f25b08c4631937213b42dca663efa2f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2017-04-20
 
-2001-12-13  Scott S. Goodwin  <scott@scottg.net>
+    - Improve cleanness of compilation
+    - Use NsDb_DriverInitProc as prototype (requires actual version of NaviServer)
+    - Bump version number to 2.2
 
-	* TODO: added this file.
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
 
-2001-12-03  Scott S. Goodwin  <scott@scottg.net>
+commit 9f129198bda1cb0d59bfb4a3b997bc3445b707be
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-12-31
 
-	* nspostgres.c: Cleaned up the code comments to conform to
-	AOLserver coding style. Haven't populated most of the comments yet
-	:)
-	
-2001-09-28  Scott S. Goodwin  <scott@scottg.net>
+    - add const declarations
 
-	* nspostgres.h: Split out from nspostgres.c.
+M	dbpg.h
+M	tclcmds.c
 
-	* Makefile: Cleaned up the Makefile. Fixed a problem where libpq
-	wasn't being loaded, so we'd end up with a "function not defined
-	error." In the previous version of the postgres driver, the
-	libpq.so is used in the EXTRA_OBJS variable. I wonder if this
-	means that the libpq.so file is loaded when the nspostgres.so
-	module is loaded. I'm not sure how that works. Now, libpq.a is
-	being used.
+commit 8001d4b6658845f04a2460d8eb81e78e8ea9cc28
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-12-31
 
-2001-09-08  Scott S. Goodwin  <scott@scottg.net>
+    - make response codes explicit
 
-	* Makefile: Turned off FOR_ACS_USE (I'll investigate what the
-	changes are and possibly integrate that code as the
-	default). Commented out lots and used the default include
-	$(NSHOME)/include/Makefile.module to handle the make and
-	installation process. The following now works:
+M	nsdbpg.c
 
-	make install POSTGRES=/your/path INST=/where/aolserver/is
+commit bdca05d73ca5777ed05504953679a05911c9c7b1
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-11-05
 
-	* Makefile: changed to accept the
-	POSTGRES=/your/postgres/path. This is mandatory. Also changed to
-	expect NSHOME to be ../aolserver.
+    - use bool datatype
 
-2001-08-31  Scott Goodwin  <scott@scottg.net>
+M	nsdbpg.c
 
-	* ChangeLog: Created this ChangeLog file from the notes in the
-	postgres.c file of the original source. This nspostgres module was
-	created from the pgdriver2.0 sources found at OpenACS.org.
+commit 6950b4beea8f5ebdc27561324907b68c5108e5a2
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-11-05
 
-2001-04-14  Don Baccus  <dhogaza@pacifier.com>
+    - reduce number of returns before end of function
 
-	* Added Henry Minsky's patch which echoes changes in the Oracle
-	driver to stream blob data directly to the connection rather than
-	first spool to a temp file.  Since the call to return the file to
-	the user doesn't return until after the operation is complete,
-	spooling was a waste of time and resource.
+M	nsdbpg.c
 
-2001-03-01  Don Baccus  <dhogaza@pacifier.com>
+commit 4366cb2e636109ff54bdc8dab64c88cd29ad118c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-18
 
-	* Added automatic quoting of emulated bind variables in order to
-	make it compatible with the analogous routine in the Oracle
-	driver.
+    - use macro for format code for ssize_t
 
-2000-12-30  Dan Wickstrom <dcwickstrom@earthlink.net>
+M	tclcmds.c
 
-	* Added blob_select_file command.  Needed an inverse to
-	blob_dml_file to support porting of webmail.
+commit ad512996aaecb968e91b6cf4ea74ddea10e03ad8
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-18
 
-	* Added bind variable emulation to support acs 4.0 porting.
+    - remove dead assignment
 
-2000-03-28 Lamar Owen <lamar.owen@wgcr.org>
+M	nsdbpg.c
 
-	* Merge with AOLserver 3.0rc1's nspostgres.c -- more error
-	checking from Jan Wieck.
+commit a124ef97143cde41d1496ff6eab23762d646bd2a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-10
 
-	* Also, changed behavior: if the datestyle parameter is not set in
-	config file, set it to be 'iso' by default -- it was not getting
-	correctly set.
+    - fix return code
 
-	* Wrapped ACS stuff inside FOR_ACS_USE #ifdef's.
+M	nsdbpg.c
 
-	* Added check for the existence of the PGDATESTYLE envvar and do
-	no setting of datestyle if it exists.
+commit b83a7d1947bd05ae69b390c14c6aabfb1902ade6
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-10-08
 
-	* Take two: make datestyle parameter override envvar, and make the
-	default go away.
+    - cleanup of int/signed conversions
 
-2000-02-12  John Beimler  <john@radiomind.com>
+M	nsdbpg.c
+M	tclcmds.c
 
-	* Added a commented-out block showing settings for Debian/GNU
-	Linux with package installed AOLserver and PostgreSQL
+commit 5b352882d711eac5d4631e1ce4f4f4c0b31b6306
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-09-27
 
-2000-02-06  Lamar Owen <lamar.owen@wgcr.org>
+    - reduce number of returns per function
+    - reduce variable scopes
 
-	* Added reimplementation of ns_column and ns_table commands --
-	adapted the code in the ArsDigita Oracle driver to work in the
-	PostgreSQL driver's skeleton.  Will revisit this implementation
-	for cleanup once functionality fully verified.
+M	nsdbpg.c
 
-1999-12-13  Lamar Owen  <lamar.owen@wgcr.org>
+commit bb5ca1c10943aa3e8c2b0e78cfe0e114d6845ef5
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-09-26
 
-	* Makefile: Cleaned up assumptions about NSHOME, PGLIB, and PGINC
-	locations.
+    - reduce usage of Tcl_AppendResult()
+    - reduce number of return statements per function
+    - make sure, string on stack starts with null character
 
-	* Makefile: Added a commented-out block showing settings for
-	RedHat Linux with the PostgreSQL RPM's installed.
+M	tclcmds.c
 
-1999-12-01  Don Baccus  <dhogaza@pacifier.com>
+commit 6ca1710e44ffc528bf36a56b60308175a28c53c9
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-08-02
 
-	* Don added the following improvements in December of 1999:
+    - adding const declarations
 
-	* 1. When a handle's returned to the pool and the handle's in
-	transaction mode, the driver rolls back the transaction.
+M	tclcmds.c
 
-	* 2. Reopens crashed backends, retrying query if told to by
-	postmaster.
+commit c61e8cc3080cdae5ca7a68fe4605d7debe61d5c8
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-08-01
 
-	* 3. ns_db ntuples now returns the number of tuples affected by
-	"insert", "update", and "delete" queries (only worked for select
-	before).
+    - dont't use boolean as argument of comparison
 
-	* 4. Supports the following, assuming you've named your driver
-	"postgres" in your .ini file:
+M	tclcmds.c
 
-          [ns/db/driver/postgres]
-          datestyle=iso
+commit 5f49e7e66b1457965aae90b1bda1f9266f0f96ed
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-07-27
 
-        (or any legal Postgres datestyle)
+    - reduce implicit conversions
 
-	* 5. The driver's name's been changed from "Postgre95" to
-	"PostgreSQL", the current official name of the database software.
+M	tclcmds.c
 
+commit 4bc072fb16b58478aad0345fd0e6495474a3b3ed
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-07-25
+
+    - prefer boolean over int
+
+M	dbpg.h
+
+commit 03184e12b71b5ba7de85071e98a6d248ad0dd740
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-07-18
+
+    - add const declarations
+    - fix implicit conversion from 0 to NULL
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 4e7822a0178c018f44bf37e46f71f1502d35e449
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-07-13
+
+    - use Ns_ReturnCode on more occations
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit ba05547d4101a929f8aad9f4c57fa0f076e23e22
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-07-08
+
+    - avoid double initialization
+    - use bool instead of int
+    - use Ns_ReturnCode instead of int
+
+M	tclcmds.c
+
+commit 5d62687fba23abc7e8fc71cbcce850cec11630d6
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-06-27
+
+    - align to prototype
+
+M	tclcmds.c
+
+commit 630c91fafab477206d083ac02d07e23109d74d7c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-06-11
+
+    - don't use boolean argument to equal operator
+
+M	tclcmds.c
+
+commit 655f81bea96aab97ee1ac9db373b0a46425dbb7b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-06-06
+
+    - make conditionals boolean expressions
+
+M	tclcmds.c
+
+commit a0bd1303ae8102b0e1fd92fe4211a41c04aaf39f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-06-06
+
+    - adding const declarations
+
+M	tclcmds.c
+
+commit 0dede3155a8d5c97010ab5fc6c5a6ed268fc118e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-06-05
+
+    - ignoring results explicitly
+
+M	nsdbpg.c
+
+commit e02a15933d51d448accccf27bb0751d9a61949aa
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-06-05
+
+    - ignore results explicitly
+
+M	tclcmds.c
+
+commit 126aee1f4a6f2ec555dc4af619c021c4413ef7f9
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-02-16
+
+    - reduce verbosity
+
+M	tclcmds.c
+
+commit 6ec4e8aef3f6f4f4504c7c2c30abf99b3869c7cb
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-01-17
+
+    - advertise postgresql95 instead of postgresql94 for mac os x
+
+M	README
+
+commit 3f9a78cff9bb0ad688267e70b93661df1a2fe966
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-01-17
+
+    - remove redundant cppcheck definition
+
+M	Makefile
+
+commit 21b5cef06f5480765bccb1a99027b5a6a7dd2294
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-01-17
+
+    - fix confict on prototpyes
+
+M	tclcmds.c
+
+commit a093456b9c858e833858a5d060c5bfe44d848112
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-01-10
+
+    - added version number (2.1, ... why not)
+    - moved access of pointers after nonnull checks
+
+M	README
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit ae29c0aa9f0551da7a4bcb4f5c47bfdd88989563
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-01-10
+
+    - added target cppcheck
+
+M	Makefile
+
+commit a4d922efb0775c61938231dee3cbdb4abea5c0f5
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2016-01-05
+
+    - fix uploading of (binary) blobs with "ns_pg blob_put" (necessary to
+      use bytearry)
+    - fix retrieving data from sql type "bytea": data has to be
+      decoded with PQunescapeBytea(). I wonder, since this every
+      works, since this function exists in PG at since 7.3!
+    - fix returning binary data in "ns_pg blob_get" (necessary to
+      use bytearry)
+    - fix streaming blobs consisting of multiple chunks (driver did a
+      close after the first chunk)
+    - use bool instead of integer variables for boolean values
+
+M	tclcmds.c
+
+commit 3bbbad569fcd1acb0511e6389837e02ae555f281
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2015-11-28
+
+    - use macro NS_NONNULL_ASSERT
+
+M	tclcmds.c
+
+commit e4240a5e18520b7fb2a1c71d1fc7e3e0b50b2caf
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2015-09-12
+
+    - report consistently the poolname when sqlDebug is turned on
+
+M	nsdbpg.c
+
+commit d1fd8c77384a37d7ba65ded49a1fb8aa8379ef5c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2015-03-15
+
+    - use for statement just for loop controlling variables
+
+M	tclcmds.c
+
+commit 0fc211b60108833050888a3dd5d71ee77cc64260
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2015-01-10
+
+    - recast result of <<
+
+M	tclcmds.c
+
+commit d87aaa02945fd0db6710462afb5aa69d4aea9387
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-12-31
+
+    - reduce variable scope
+
+M	nsdbpg.c
+
+commit f7d3b605d2743ebbd8fdd203297a724dec192ddb
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-12-20
+
+    - fix newly introduced bug when moving assignment out of expression
+
+M	nsdbpg.c
+
+commit e6953e324c1e49dcf433569e8f4d1404a70d4db1
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-12-13
+
+    - move assignments out of if-conditions
+
+M	nsdbpg.c
+
+commit 021b90f5c10884f38aab5d4c10531d92af1ffa97
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-12-13
+
+    - reduce implicit conversions
+    - prefer lowercase over uppercase integer suffix
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 5d6582c2068f68dce0b35e1fed465183d816facc
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-12-04
+
+    - use Debug(sql) instead of verbose flag
+    - use likely/unlikely to ease for branch prediction
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 7aa0d9c7359d43d9abe035cabc32de81b3271a5b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-25
+
+    - remove misleading last arg from DbFail
+    - let switch statement end via break and not via return
+
+M	tclcmds.c
+
+commit 5c2ed1c0dd0031e85a071bfbf4d3a6fbebd9376f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-25
+
+    - adjust to new prototypes, add const declarations
+
+M	README
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 398edaf6d3ea0acd5cff204934062540c262f216
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-22
+
+    - resolve macro ENC (conflct with c90 reserved identifiers)
+    - avoid c90 identifiers starting with str[a-z]
+    - use ns_open/ns_close
+    - add const declarations
+
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 876b30fba942f5a1dd9e79a7b74fdae5dda1d30d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-20
+
+    - avoid crash when "ns_pg" is called without a handle
+    - prefer standard tcl error messages via Tcl_WrongNumArgs() over other  solutions
+    - leave switch statement via breaks and not via returns
+    - use NS_INVALID_FD
+
+M	tclcmds.c
+
+commit 2c8dc5578d393b50b9413a1627b500c32854c9bc
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-20
+
+    - avoid c90 identifier starting with str[a-z]
+    - add "const" constraints
+
+M	tclcmds.c
+
+commit 2dd1203e3582734e1627796d787296aabe65a94f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-14
+
+    - add "default" labels to switch statements
+    - add editor hints to to keep formatting conventions, prefer spaces over tabs
+
+M	tclcmds.c
+
+commit a70dda9dcd742836d1ff49b820d0a2cc404d6b6e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-11
+
+    - use "const" when possible
+    - remove unneeded casts
+    - prefer size_t for sizes
+    - reduce implicit conversions
+    - prefer boolean expressions in if/while/... over expressions of other types
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 2149b3a550218f2f65e0de5fce36e6afea268001
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-08
+
+    - convert enum explicitly to int
+
+M	nsdbpg.c
+
+commit 04c5685758045d059bfdefe671ec1ff42d531f12
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-08
+
+    - factor out redundant code into get_blob_tuples()
+    - add nonnull assertions
+
+M	tclcmds.c
+
+commit 079cb2416957c79849e85687c41c496e385bff2c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-06
+
+    - avound implicit signed/unsigned converison
+
+M	tclcmds.c
+
+commit e8713776b1e989aef7a52ec0f972a6f11c86fcb0
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-04
+
+    - remove unneeded include file
+    - use boolean expressions in conditions of conditional expressions
+    - adjust array sizes
+
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 0b52336b756e89f49df55f5d0da103f8829b382f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-02
+
+    - use UCHAR macro when appropriate
+    - use boolean expressions in conditions of conditional expressions
+    - reduce implicit signed/unsigned conversions
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 32da98d698e4f5ee81d668194c45eea66bc07789
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-01
+
+    - prefer boolen expressions
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 2636a9d7e0c1ffc7ab9029cb547c9723f67e085c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-11-01
+
+    - adjust to main NaviServer
+
+M	nsdbpg.c
+
+commit 9e6d01cbd000cc7f83fab0fb9991f804fdb5323b
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-29
+
+    - remove unneeded cast
+    - use parens for boolean expression
+
+M	tclcmds.c
+
+commit e95a81c66b3eb2a1cf2fde0b2fccb603f7acdb11
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-28
+
+    - reduce implicit signed/unsigned conversions
+    - replace unsafe atoi() by strtol()
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 6bb6fbcfb67be1d7ac1cb950aac1596e5e59c57c
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-24
+
+    - declared more arguments as const
+
+M	nsdbpg.c
+
+commit f2c609e80e61ffdc114216c222d2de0ff49c6b61
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-22
+
+    - use const on more occasions
+
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit bd6ab0ec866db0786a4512ba009185900f563601
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-14
+
+    - reduce number of type conversions
+    - use const rather than CONST for internal purposes
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit b50e568535e473c93c6d6676a52934f8f9a4c802
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-12
+
+    - use hex constants rather than octal constants
+    - flag unused variables with UNUSED
+    - reduce signed conversions / losses
+
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit c2ca4d8140650955a1da27b4564f96db0d79f92f
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-10-10
+
+    - reduce number of unsigned -> signed conversions
+
+M	tclcmds.c
+
+commit 671a001e43a921fc32db04db4c5ab2a4e4db6dd4
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-09-28
+
+    - remove useless assignments
+
+M	tclcmds.c
+
+commit 95836b643f9ac7737c76d95b1d765bc5a254d21a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-09-24
+
+    - fix indentation
+    - brace body of non-trivial if-expressions
+
+M	tclcmds.c
+
+commit c1d2df7e1efa5537364ef88ed0f498f655181fbe
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-09-19
+
+    - use angle brackets for include file names
+
+M	dbpg.h
+
+commit 6676115bfa2c65a1bc76ec2a2abae14fd6d42a36
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-05-12
+
+    - reduce variable scope
+    - use NULL instead of 0 for null-pointer
+    - don't assign to unread variable
+
+M	tclcmds.c
+
+commit a645e0458141c90571254c0bc01c331456ad7d32
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-05-10
+
+    Initialize internal representations of Tcl_Objs of type ParsedSQLObjType with zero bytes
+
+M	tclcmds.c
+
+commit 784e5eccf2fe4a14abfef42fa311779244cf8871
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2014-05-02
+
+    Update README file with more examples
+
+M	Makefile
+M	README
+M	tclcmds.c
+
+commit abd15c7ddc18fc259d3840e1a2c22f6d0a88ec52
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2013-05-25
+
+    Added tag naviserver-4.99.5 for changeset 2b239302f68c
+
+M	.hgtags
+
+commit fffe3ee5b4f6cedc58ae7d51608ac67c58797ea7
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2013-05-25
+
+    - updated Changelog and README files
+
+M	README
+
+commit dce92e0f7c8c3ee14389ac960382697b65bdef2e
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2013-05-25
+
+    - fixed typo
+
+M	nsdbpg.c
+
+commit e8d735175979dbe24095a176a47cd9f6aebab7fc
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2013-04-12
+
+    - introduce new tcl_obj type parsedSQL to keep compiled SQL state. When possible, SQL queries are parsed once for bind vars emulation and the parsed SQL query can be reused later without the need for reparsing. This improves the situation also for SQL queries without bind vars, since the compiled representation is aware of the fact and does not require string scanning.
+    - reduce malloc/free operations by avoiding string duplications
+
+M	tclcmds.c
+
+commit ddf7fe9dfbb55f882d9ccfc30ec3dd0da810bbfb
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2013-04-07
+
+    - changed cmd interface from TclCmd to TclObjCmd
+    - use caching lookup function (Tcl_GetIndexFromObj) for sub cmd lookup
+       to reduce string comparisons
+    - removed security warnings from static analyzer (potential buffer
+       overruns in scanf)
+    - removed compiler warnings
+    - added sample build line to README
+
+M	README
+M	nsdbpg.c
+M	tclcmds.c
+
+commit eaf22cd226c717f7bff5a6df939932b356809e6a
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2012-10-21
+
+    remove merge markers
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit e16fbe8d713fa20e13690260bbf716e5a577e75d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2012-10-21
+
+    Use Ns_Callback* for callbacks
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit cf3a02cbbeb0092052ccf597a156165f0baf79b7
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2012-07-13
+
+    removed RCSIDs (caused problem in compilation on CentOS 5.5)
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit 296e287d3952d4917f91a8e00bb28850db62151d
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2012-01-09
+
+    Introduced PGINCLUDE and PGLIB to allow separate configuration. Background: MacPorts uses a different directory structure making this necessary
+
+M	Makefile
+
+commit a98f24d84c6342308ed4eadae1bc5d7642e53669
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2012-01-07
+
+    Fix resource leak
+    Minor code cleanup
+
+M	nsdbpg.c
+M	tclcmds.c
+
+commit c24836eae732c648fd7d5d4d984ee94a0e907695
+Author: Gustaf Neumann <neumann@wu-wien.ac.at>
+Date:   2011-07-06
+
+    - Get rid of deprecated calls.
+    - using SQL escape string syntax E'...' when needed (required in PostgreSql 9.1)
+
+M	tclcmds.c
+
+commit 526a2cb27ac3c01f849cb9afaef571e42f1fff49
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2008-08-28
+
+    Implement new DbFn_GetRowCount API
+
+M	nsdbpg.c
+
+commit 1f7a45e2bf3c42425ee5f116f06f7641b1610ca9
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2008-03-26
+
+    Minor build fixes for recent Tcl versions; cleanup whitespace
+
+M	tclcmds.c
+
+commit 44d558b5c74d8e6daaaadca107e7beffaacb738c
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2008-03-11
+
+    Remove unsupported Makefile.win32
+
+D	Makefile.win32
+
+commit 799dff5613c34787cfa4f937a20bcfe6a044de00
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2007-11-14
+
+    Add win32 makefile
+
+A	Makefile.win32
+
+commit 35c0515e4575edcb571a78a994f8d46043e22ebc
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2007-09-10
+
+    Add POSTGRES build variable to compile against non-standard installation
+
+M	Makefile
+
+commit 0fac6bf6677deade5fb5f6877f52197a1157e6fb
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2007-05-23
+
+    Set NAVISERVER build variable conditionaly
+
+M	Makefile
+
+commit 615c7a48f5bd76e80c12d61b96414f0a7c8d6960
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2007-03-10
+
+    Replacing AOLserver license with mozilla license to have consistent licensing mode
+
+M	Makefile
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit cc9f1451d99a42a213bf8c5f9c00ce6ff718a1cc
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2005-08-08
+
+    Use new style ns_strdup etc. functions inplace of depreciated Ns_* functions
+
+M	tclcmds.c
+
+commit 598b9f5d13eee0965b7dcdccba358f6ca3f3f739
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2005-08-01
+
+    Use Ns_TclRegisterTrace inplace of depreciated Ns_TclInitInterps
+
+M	tclcmds.c
+
+commit 6d0498f17bd34d26b0f8f031f2a8e5c2cbf68451
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2005-06-17
+
+    Rename Ns_PgServerInit, re-added to nsdb driver struct
+
+M	dbpg.h
+M	nsdbpg.c
+
+commit bceeec7ac260fcb18930c43b332f7c4e168ed82e
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2005-06-17
+
+    Remove undefined PgDbServerInit
+
+M	nsdbpg.c
+
+commit bc0192d7b1c7630494aafc36d73645761d670f33
+Author: Stephen Deasey <sdeasey@gmail.com>
+Date:   2005-06-16
+
+    Use a regular naming scheme for functions and variables
+
+M	dbpg.h
+M	nsdbpg.c
+M	tclcmds.c
+
+commit aef5edd6ae51a2e50c81b4d6cee579c6d3497adf
+Author: Stephen Deasey <sdeasey@gmail.com>
+Date:   2005-06-15
+
+    Drop emulation code; move tcl commands to own file; various other code cleanups
+    
+    * nsdbpg.c: Untabify, reindent and reorganize. Drop emulation code
+    for AOLserver 2.x ns_table etc. commands.
+    
+    * tclcmds.c: Split extra Tcl commands and bind vaiable emulation
+    code into new file.
+    
+    * nsdbpg.h:
+    * dbpg.h: Rename header to reflect it's private status. Move all
+    private declarations into c files, leaving just the handle
+    structure shared module wide.
+    
+    * Makefile: Remove all the crud.
+
+M	Makefile
+A	dbpg.h
+M	nsdbpg.c
+D	nsdbpg.h
+A	tclcmds.c
+
+commit 8bb16e10a6883aaec6996299c6bdf5bce0f10333
+Author: Stephen Deasey <sdeasey@gmail.com>
+Date:   2008-11-21
+
+    Initial import of AOLserver nspostgres to naviserver nsdbpg
+
+M	Makefile
+R099	nspostgres.c	nsdbpg.c
+R100	nspostgres.h	nsdbpg.h
+
+commit 866bce902458fb42a26888fa32c434f6890abd9b
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2004-06-30
+
+    Try to guess whether we're building inside the aolserver src tree
+
+M	Makefile
+
+commit 544059479f472f689e7fc24ae0d40daec2184b49
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2004-06-30
+
+    Fix postgres path location
+
+M	Makefile
+
+commit 31f1a1412a772bc168cdab8ce24b23a2cfaa18be
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2004-06-29
+
+    Guess aolserver installation path
+
+M	Makefile
+
+commit 133e7e8c87e2df1294d65046d9c9dc6b907b2451
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2004-03-29
+
+    Build fixes: add -lnsdb to MODLIBS; link to openssl with OPENSSL=/path/to/ssl
+
+M	Makefile
+
+commit 29584f7532ef7936aa4b795bc7e1485307278ac4
+Author: Lamar Owen <lamar.owen@wgcr.org>
+Date:   2004-02-04
+
+    Roll the 4.0 tag and tarball
+
+M	.hgtags
+M	README
+
+commit 8bfb545cbc1a81d5f32f44b955a90827ea8b6ff5
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2003-10-02
+
+    Remove extra space from check-env make target
+
+M	Makefile
+
+commit 0419923ba580b6d994a877c0c325ef2f49d73446
+Author: Lamar Owen <lamar.owen@wgcr.org>
+Date:   2003-09-27
+
+    Add conditional for compiling for AOLserver 4 for -lnsdb
+
+M	Makefile
+
+commit e3a85cf79fcd68d02586ce323a46f21b771fbbec
+Author: Vlad Seryakov <vlad@crystalballinc.com>
+Date:   2003-06-28
+
+    Set db exception on error in exec in addition to logging
+
+M	nspostgres.c
+
+commit eea6098a84126db267c27f6648a13d7ba64d93a4
+Author: Lamar Owen <lamar.owen@wgcr.org>
+Date:   2003-01-09
+
+    Include nsdb.h for AOLserver 4 compatibility
+    
+    Changed nspostgres.h to recognize AOLserver 4, which split nsdb.h back
+    out of ns.h (AOLserver 3 had merged it in; AS 2.3.3 had it split). This
+    driver now compiles with AOLserver 4.
+
+M	nspostgres.h
+
+commit 7488f06eceae550620421e77ec363827e4bc647c
+Author: Lamar Owen <lamar.owen@wgcr.org>
+Date:   2002-12-24
+
+    Tag and release version 3.5
+
+A	.hgtags
+
+commit f458b9c0b05c8029a3af32a39e697574a74821e7
+Author: Lamar Owen <lamar.owen@wgcr.org>
+Date:   2002-12-16
+
+    Update some comments; remove changelog from header; update list of contributors
+
+M	README
+M	nspostgres.c
+M	nspostgres.h
+
+commit 7c7dcffb57ba794a7adf0bd82b19f527df8ac2a8
+Author: Tom Jackson <tom.rmadilo@gmail.com>
+Date:   2002-12-14
+
+    Add test for value of ACS command line var; if 1 build for acs
+
+M	Makefile
+
+commit e298b6b68f78605b1dfaaa152fdabe8736cd9a6e
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2002-12-13
+
+    Minor fix to 'make help' text
+
+M	Makefile
+
+commit d36579246b5f7a31b385423b582eaf150ca24299
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2002-12-13
+
+    Add 'make help' for developers
+
+M	Makefile
+R097	readme.txt	README
+
+commit 304ee26efedc799d148e4a5a7d237e0de5acdfea
+Author: Tom Jackson <tom.rmadilo@gmail.com>
+Date:   2002-12-13
+
+    Remove additional /lib from end of MODLIBS
+
+M	Makefile
+
+commit 8bb59aeb664d604bbc0cf0962c607d16fb121072
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2002-12-13
+
+    Overwrote what's here with the latest OpenACS version, update Makefile
+
+M	Makefile
+M	nspostgres.c
+M	nspostgres.h
+
+commit 8cea01190b5670528696f5b12be81df5792f1c9a
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2002-06-02
+
+    Incorporate latest patches from the postgres module that the OpenACS team maintains
+    
+    Remove TODO file
+
+M	nspostgres.c
+
+commit 6f58bcec655b4a745044e9c3a89d1a13cf8d52d2
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2001-12-03
+
+    nspostgres.c: clean up code comments to conform to AOLserver coding style
+    
+    Haven't populated most of the comments yet :)
+
+M	nspostgres.c
+
+commit 0f4174408294ca8bbf76ae21d6183f290e6d4f6e
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2001-09-29
+
+    nspostgres.h: split out from nspostgres.c
+
+A	nspostgres.h
+
+commit 8a64b21dc90ee0bdc1b3f1d1282890fe49a9c9f5
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2001-09-29
+
+    Fix "function not defined error" when libpq wasn't being loaded
+    
+    In the previous version of the postgres driver, the libpq.so is used
+    in the EXTRA_OBJS variable. I wonder if this means that the libpq.so
+    file is loaded when the nspostgres.so module is loaded. I'm not sure
+    how that works. Now, libpq.a is being used.
+
+M	Makefile
+M	nspostgres.c
+
+commit 189701931f1a31bc950459a7b4926817f0c4a8e1
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2001-09-09
+
+    Turn of FOR_ACS_USE; build fixes
+    
+    Turned off FOR_ACS_USE (I'll investigate what the changes are and
+    possibly integrate that code as the default).
+    
+    Commented out lots and used the default include
+    $(NSHOME)/include/Makefile.module to handle the make and
+    installation process.
+    
+    The following now works:
+    
+    make install POSTGRES=/your/path INST=/where/aolserver/is
+
+M	Makefile
+
+commit bc06028a34d35c65259330fcf46979c251f1f9c9
+Author: Scott S. Goodwin <scott@scottg.net>
+Date:   2001-09-09
+
+    Accept POSTGRES=/your/postgres/path; expect NSHOME to be ../aolserver
+
+M	Makefile
+
+commit a78d65feac5d3387e6bdefc369c85fb67629cd9f
+Author: Kriston Rehberg <kriston@aol.com>
+Date:   2001-09-05
+
+    Initial revision
+
+A	Makefile
+A	nspostgres.c
+A	readme.txt
