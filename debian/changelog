@@ -1,3 +1,9 @@
+naviserver-nsdbpg (4.99.30~20240203.2d71307-1+deb10u1) buster; urgency=medium
+
+  * Import from upstream: commit sha 2d71307
+
+ -- Qcode Software Ltd <hackers@qcode.co.uk>  Tue, 05 Mar 2024 12:10:34 +0000
+
 naviserver-nsdbpg (4.99.24~rc1-1+deb10u1) buster; urgency=medium
 
   * Import from upstream
