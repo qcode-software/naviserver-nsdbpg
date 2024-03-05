@@ -124,6 +124,11 @@ Provided API:
        ns_pg port             /handle/
        ns_pg status           /handle/
 
+ - ns_pg_prepare /sql/
+
+   Return a dict building a prepared statement for the passed-in SQL
+   statement. The dict contains the keys "sql" and "args".
+
 
 DEVELOPER'S GUIDE:
 
@@ -135,23 +140,28 @@ The build step needs from PostgreSQL
 
 Examples for a build operation:
 
-     export PG=/usr/local/pg14
+     export PG=/usr/local/pg16
      make PGLIB=$PG/lib PGINCLUDE=$PG/include
 
      make PGINCLUDE=/usr/include/postgresql
 
-To build/install on a non-standard path, use e.g.:
+To build/install on a non-standard path of PostgreSQL libraties, use e.g.:
 
-     export PG=/usr/local/pg14
-     make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/
-     make PGLIB=$PG/lib PGINCLUDE=$PG/include NAVISERVER=/opt/local/ns/ install
+     export PG=/usr/local/pg16
+     make PGLIB=$PG/lib PGINCLUDE=$PG/include
+     make PGLIB=$PG/lib PGINCLUDE=$PG/include install
+
+In case NaviServer is installed at a differet location, use e.g.
+
+     make PGLIB=... PGINCLUDE=... NAVISERVER=/opt/local/ns499/
+     make PGLIB=... PGINCLUDE=... NAVISERVER=/opt/local/ns499/ install
 
 Under MacPorts, you might use something like:
 
-     PGPATH=postgresql14 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/
+     PGPATH=postgresql16 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/
 
 For extended code checking via cppchek, one might use e.g.
 
-     PGPATH=postgresql14 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/ cppcheck
+     PGPATH=postgresql16 && make PGLIB=/opt/local/lib/$PGPATH/ PGINCLUDE=/opt/local/include/$PGPATH/ cppcheck
 
 See the Makefile for further information on building this module.
