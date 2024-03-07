@@ -16,12 +16,6 @@ override_dh_auto_install:
 	mkdir -p $(CURDIR)/debian/tmp/usr/lib/naviserver/bin
 	$(MAKE) install DESTDIR=$(CURDIR)/debian/tmp
 
-override_dh_install:
-	dh_install --sourcedir $(CURDIR)/debian/tmp
-
-override_dh_missing:
-	dh_missing --sourcedir $(CURDIR)/debian/tmp
-
 %:
 	dh $@ 
 
