@@ -2,8 +2,8 @@ Source: naviserver-nsdbpg
 Section: web
 Priority: optional
 Maintainer: Qcode Software Ltd <hackers@qcode.co.uk>
-Build-Depends: debhelper (>= 9), libpq-dev, libpq5, naviserver-dev (>= 4.99.30)
-Standards-Version: 3.9.8
+Build-Depends: debhelper (>= 13), libpq-dev, libpq5, naviserver-dev (>= 4.99.30)
+Standards-Version: 4.6.2
 #Vcs-Git: git://git.debian.org/collab-maint/naviserver-nsdbpg.git
 #Vcs-Browser: http://git.debian.org/?p=collab-maint/naviserver-nsdbpg.git;a=summary
 
